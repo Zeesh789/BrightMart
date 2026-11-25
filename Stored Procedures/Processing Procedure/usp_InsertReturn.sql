@@ -41,11 +41,11 @@ BEGIN
 													ELSE TRY_CONVERT(DATETIME,@Return_Date_Time,120) END
 
 			SELECT @Order_Status = OrderStatus
-			FROM [Order]
+			FROM dbo.[Order]
 			WHERE OrderID = @Order_Id_To_Process
 
 			SELECT @Payment_Date_Time = MAX(TransactionDateTime)
-			FROM OrderTransaction
+			FROM dbo.OrderTransaction
 			WHERE OrderID = @Order_Id_To_Process AND TransactionStatus = 1
 
 			INSERT INTO @Items_To_Process(Product_Id, Product_Return_Count, Return_Reason)
@@ -54,90 +54,95 @@ BEGIN
 
 			IF (@Order_Id_To_Process IS NULL) OR (@Return_Date_Time_To_Process IS NULL)
 				BEGIN
-					PRINT 'Invalid Input Values'
+					SELECT 'Invalid Input Values' AS [Message]
 				END
 			ELSE IF NOT EXISTS (SELECT 1 FROM @Items_To_Process)
 				BEGIN
-					PRINT 'No Products in the Return'
+					SELECT 'No Products in the Return' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process WHERE (Product_Id IS NULL) OR (Product_Return_Count IS NULL) OR (Product_Return_Count <= 0))
 				BEGIN
-					PRINT 'Invalid Product Id or Product Count in the Return Products'
+					SELECT 'Invalid Product Id or Product Count in the Return Products' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process WHERE (Return_Reason IS NULL) OR (Return_Reason = '') OR (LEN(Return_Reason) < 5))
 				BEGIN
-					PRINT 'Invalid Return Reason! Reason must have at least 5 characters'
+					SELECT 'Invalid Return Reason! Reason must have at least 5 characters' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process WHERE PATINDEX('%  %', Return_Reason) > 0)
 				BEGIN
-					PRINT 'Consecutive Spaces Not Allowed! Invalid Input'
+					SELECT 'Consecutive Spaces Not Allowed! Invalid Input' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT Product_Id FROM @Items_To_Process GROUP BY Product_Id HAVING COUNT(*) > 1)
 				BEGIN
-					PRINT 'Same Product added more than once! Increase the Product Count instead'
+					SELECT 'Same Product added more than once! Increase the Product Count instead' AS [Message]
 				END
 			ELSE IF (@Order_Status IS NULL)
 				BEGIN
-					PRINT 'Order ' + QUOTENAME(@Order_Id,'''') + ' does not exist'
+					SELECT 'Order ' + QUOTENAME(@Order_Id,'''') + ' does not exist' AS [Message]
 				END
 			ELSE IF (@Order_Status != 1)
 				BEGIN
-					PRINT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is not Completed! Only Paid Orders can be Returned'
+					SELECT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is not Completed! Only Paid Orders can be Returned' AS [Message]
 				END
 			ELSE IF (@Return_Date_Time_To_Process > GETDATE())
 				BEGIN
-					PRINT 'Return Date ' + QUOTENAME(@Return_Date_Time,'''') + ' cannot be in the Future'
+					SELECT 'Return Date ' + QUOTENAME(@Return_Date_Time,'''') + ' cannot be in the Future' AS [Message]
 				END
 			ELSE IF (@Return_Date_Time_To_Process < @Payment_Date_Time)
 				BEGIN
-					PRINT 'Return Date cannot be before the Payment Date ' + QUOTENAME(CONVERT(VARCHAR,@Payment_Date_Time,120),'''')
+					SELECT 'Return Date cannot be before the Payment Date ' + QUOTENAME(CONVERT(VARCHAR,@Payment_Date_Time,120),'''') AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process I
-							LEFT JOIN OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
+							LEFT JOIN 
+							dbo.OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
 							WHERE OP.ProductID IS NULL)
 				BEGIN
-					PRINT 'One or more Products were not bought in Order ' + QUOTENAME(@Order_Id,'''')
+					SELECT 'One or more Products were not bought in Order ' + QUOTENAME(@Order_Id,'''') AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process I
-							JOIN OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
+							INNER JOIN
+							dbo.OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
 							WHERE I.Product_Return_Count > OP.ProductOrderCount
 								- ISNULL((SELECT SUM(RP.ProductReturnCount)
 										  FROM ReturnProduct RP
-										  JOIN [Return] R ON R.ReturnID = RP.ReturnID
+										  INNER JOIN [Return] R ON R.ReturnID = RP.ReturnID
 										  WHERE R.OrderID = @Order_Id_To_Process AND RP.ProductID = I.Product_Id), 0))
 				BEGIN
-					PRINT 'Return Count is more than the Products bought in Order ' + QUOTENAME(@Order_Id,'''')
+					SELECT 'Return Count is more than the Products bought in Order ' + QUOTENAME(@Order_Id,'''') AS [Message]
 				END
 			ELSE
 				BEGIN
 					SELECT @Return_Amount = SUM(I.Product_Return_Count * OP.ProductPrice)
 					FROM @Items_To_Process I
-					JOIN OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
+					INNER JOIN 
+					dbo.OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
 
 					SELECT @Return_Id = ISNULL(MAX(ReturnID),0) + 1
-					FROM [Return] WITH (UPDLOCK, HOLDLOCK)
+					FROM dbo.[Return]
 
-					INSERT INTO [Return](ReturnID, OrderID, ReturnAmount, ReturnDateTime)
+					INSERT INTO dbo.[Return](ReturnID, OrderID, ReturnAmount, ReturnDateTime)
 						VALUES (@Return_Id, @Order_Id_To_Process, @Return_Amount, @Return_Date_Time_To_Process)
 
 					INSERT INTO ReturnProduct(ReturnID, ProductID, ProductReturnCount, ProductPrice, ReturnReason)
 					SELECT @Return_Id, I.Product_Id, I.Product_Return_Count, OP.ProductPrice, I.Return_Reason
 					FROM @Items_To_Process I
-					JOIN OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
+					INNER JOIN 
+					dbo.OrderProduct OP ON OP.ProductID = I.Product_Id AND OP.OrderID = @Order_Id_To_Process
 
 					-- Returned Products are added back in the Product Stock
 					UPDATE P
 					SET P.ProductAvailableCount = P.ProductAvailableCount + I.Product_Return_Count
-					FROM Product P
-					JOIN @Items_To_Process I ON I.Product_Id = P.ProductID
+					FROM dbo.[Product] P
+					INNER JOIN @Items_To_Process I ON I.Product_Id = P.ProductID
 
-					PRINT 'Return ' + QUOTENAME(CAST(@Return_Id AS VARCHAR),'''') + ' of amount ' + QUOTENAME(CAST(@Return_Amount AS VARCHAR),'''')
-						+ ' for Order ' + QUOTENAME(@Order_Id,'''') + ' successfully added'
+					SELECT 'Return ' + QUOTENAME(CAST(@Return_Id AS VARCHAR),'''') + ' of amount ' + QUOTENAME(CAST(@Return_Amount AS VARCHAR),'''') 
+						+ ' for Order ' + QUOTENAME(@Order_Id,'''') + ' successfully added' AS [Message]
 				END
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
-		Print Error_Message()
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 		IF @@TRANCOUNT > 0 ROLLBACK TRAN
 	END CATCH
 END

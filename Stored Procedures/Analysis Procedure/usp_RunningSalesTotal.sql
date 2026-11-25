@@ -25,7 +25,7 @@ BEGIN
 				SELECT 'Invalid Month! Month must be in MM-YYYY format' AS [Message]
 			END;
 		ELSE IF (@Sales_Month_To_Process IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM [Order]
+				AND NOT EXISTS (SELECT 1 FROM dbo.[Order]
 								WHERE OrderStatus = 1
 								AND OrderDateTime >= @Sales_Month_To_Process AND OrderDateTime < DATEADD(MONTH, 1, @Sales_Month_To_Process))
 			BEGIN
@@ -46,13 +46,8 @@ BEGIN
 			END;
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO

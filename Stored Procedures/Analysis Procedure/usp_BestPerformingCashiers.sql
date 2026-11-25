@@ -25,12 +25,12 @@ BEGIN
 				SELECT 'Invalid Store Id' AS [Message]
 			END;
 		ELSE IF (@Store_Id_To_Process IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM Store WHERE StoreID = @Store_Id_To_Process)
+				AND NOT EXISTS (SELECT 1 FROM dbo.Store WHERE StoreID = @Store_Id_To_Process)
 			BEGIN
 				SELECT 'Store ' + QUOTENAME(@Store_Id,'''') + ' does not exist' AS [Message]
 			END;
 		ELSE IF (@Store_Id_To_Process IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM [Order] WHERE StoreID = @Store_Id_To_Process)
+				AND NOT EXISTS (SELECT 1 FROM dbo.[Order] WHERE StoreID = @Store_Id_To_Process)
 			BEGIN
 				SELECT 'No Orders found for Store ' + QUOTENAME(@Store_Id,'''') AS [Message]
 			END;
@@ -63,13 +63,8 @@ BEGIN
 			END;
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO
@@ -88,7 +83,7 @@ EXEC usp_BestPerformingCashiers
 EXEC usp_BestPerformingCashiers @Store_Id = '1'
 
 -- Employees of only Store 1
--- RESULT :
+-- RESULT : PASS
 
 ------------------------------------------------------------------------------------
 

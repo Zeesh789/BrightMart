@@ -19,7 +19,7 @@ BEGIN
 	BEGIN TRY
 		SELECT
 		'Low Sale Order' As Category,
-		COUNT(CASE WHEN OrderAmount < 500 THEN 1 END) AS CustomerOrdersCount
+		COUNT(CASE WHEN OrderAmount < 500 THEN 1 ELSE NULL END) AS CustomerOrdersCount
 		FROM [dbo].[Order] O
 		WHERE O.OrderStatus = 1
 
@@ -27,7 +27,7 @@ BEGIN
 
 		SELECT
 		'Medium Sale Order' AS Category,
-		COUNT(CASE WHEN OrderAmount >= 500 AND OrderAmount < 1000 THEN 1 END) AS CustomerOrdersCount
+		COUNT(CASE WHEN OrderAmount >= 500 AND OrderAmount < 1000 THEN 1 ELSE NULL END) AS CustomerOrdersCount
 		FROM [dbo].[Order] O
 		WHERE O.OrderStatus = 1
 
@@ -35,7 +35,7 @@ BEGIN
 
 		SELECT 
 		'High Sale Order' AS Category,
-		COUNT(CASE WHEN OrderAmount >= 1000 THEN 1 END) AS CustomerOrdersCount
+		COUNT(CASE WHEN OrderAmount >= 1000 THEN 1 ELSE NULL END) AS CustomerOrdersCount
 		FROM [dbo].[Order] O
 		WHERE O.OrderStatus = 1
 		ORDER BY CustomerOrdersCount DESC
@@ -43,13 +43,8 @@ BEGIN
 
 	END TRY
 	BEGIN CATCH 
-		SELECT
-		ERROR_NUMBER() as ErrorNumber,
-		ERROR_MESSAGE() as ErrorMessage,
-		ERROR_PROCEDURE() as ErrorProcedure,
-		ERROR_STATE() as ErrorState,
-		ERROR_SEVERITY() as ErrorSeverity,
-		ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO

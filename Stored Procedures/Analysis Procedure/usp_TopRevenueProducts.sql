@@ -8,6 +8,9 @@
     Modified            : Version 1
 
 ****************************************************************/
+USE BrightMartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_TopRevenueProducts
 @Category_Id VARCHAR(10) = NULL
@@ -23,7 +26,7 @@ BEGIN
 				Select 'Invalid Category Id' AS [Message]
 			END;
 		ELSE IF (@Category_Id_To_Process IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM ProductCategory WHERE ProductCategoryID = @Category_Id_To_Process)
+				AND NOT EXISTS (SELECT 1 FROM dbo.ProductCategory WHERE ProductCategoryID = @Category_Id_To_Process)
 			BEGIN
 				Select 'Category ' + QUOTENAME(@Category_Id,'''') + ' does not exist' AS [Message]
 			END;
@@ -55,7 +58,8 @@ BEGIN
 			END;
 	END TRY
 	BEGIN CATCH
-		Select 'Something went Wrong. If the problem continues, Please Contact Administrator.' AS [Message]
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO

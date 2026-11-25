@@ -23,7 +23,7 @@ BEGIN
 				SELECT 'Invalid Category Id' as [Message]
 			END
 		ELSE IF (@CategoryIDToProcess IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM ProductCategory WHERE ProductCategoryID = @CategoryIDToProcess)
+				AND NOT EXISTS (SELECT 1 FROM dbo.ProductCategory WHERE ProductCategoryID = @CategoryIDToProcess)
 			BEGIN
 				SELECT 'Category with ProductCategoryID ' + QUOTENAME(@CategoryID,'''') + ' does not exist' AS [Message]
 			END
@@ -40,8 +40,8 @@ BEGIN
 				FROM 
 				[dbo].[Order] O
 				INNER JOIN [dbo].OrderProduct OP ON O.OrderID = OP.OrderID
-				INNER JOIN [Product] P ON P.ProductID = OP.ProductID
-				INNER JOIN ProductCategory PC ON PC.ProductCategoryID = P.ProductCategoryID
+				INNER JOIN dbo.[Product] P ON P.ProductID = OP.ProductID
+				INNER JOIN dbo.ProductCategory PC ON PC.ProductCategoryID = P.ProductCategoryID
 				WHERE O.OrderStatus = 1
 				GROUP BY PC.ProductCategoryId, PC.ProductCategoryName
 				)
@@ -52,13 +52,8 @@ BEGIN
 		END;
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO

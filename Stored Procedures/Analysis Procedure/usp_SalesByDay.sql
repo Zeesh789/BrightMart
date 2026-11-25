@@ -30,7 +30,7 @@ BEGIN
 			BEGIN
 				SELECT 'Invalid Day! Day must be the full name of the Day (Monday to Sunday)' AS [Message]
 			END
-		ELSE IF NOT EXISTS (SELECT 1 FROM [Order] WHERE OrderStatus = 1)
+		ELSE IF NOT EXISTS (SELECT 1 FROM dbo.[Order] WHERE OrderStatus = 1)
 			BEGIN
 				SELECT  'No Sales found' AS [Message]
 			END
@@ -64,13 +64,8 @@ BEGIN
 			END;
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO

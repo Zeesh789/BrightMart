@@ -25,18 +25,11 @@ BEGIN
 		WHERE O.CustomerId IS NULL 
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO
-
-SELECT * FROM Customer
 
 EXEC usp_CustomerNeverOrdered
 

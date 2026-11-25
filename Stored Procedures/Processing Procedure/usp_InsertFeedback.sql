@@ -12,10 +12,10 @@
 
 CREATE OR ALTER PROC
 Usp_InsertFeedback
-@Order_Id VARCHAR(10) = NULL,
-@Store_Rating VARCHAR(10) = NULL,
-@Cashier_Rating VARCHAR(10) = NULL,
-@Feedback_Detail VARCHAR(500) = NULL
+@Order_Id VARCHAR(5) = NULL,
+@Store_Rating VARCHAR(3) = NULL,
+@Cashier_Rating VARCHAR(3) = NULL,
+@Feedback_Detail VARCHAR(255) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -31,66 +31,70 @@ BEGIN
 			SET @Cashier_Rating_To_Process = TRY_CONVERT(INT,@Cashier_Rating)
 
 			SELECT @Order_Status = OrderStatus
-			FROM [Order]
+			FROM dbo.[Order]
 			WHERE OrderID = @Order_Id_To_Process
 
 			IF (@Order_Id_To_Process IS NULL) OR (@Store_Rating_To_Process IS NULL) OR (@Cashier_Rating_To_Process IS NULL)
 				OR (@Feedback_Detail IS NULL)
 				BEGIN
-					PRINT 'Invalid Input Values'
+					SELECT 'Invalid Input Values' AS [Message]
 				END
 			ELSE IF (@Order_Status IS NULL)
 				BEGIN
-					PRINT 'Order ' + QUOTENAME(@Order_Id,'''') + ' does not exist'
+					SELECT 'Order ' + QUOTENAME(@Order_Id,'''') + ' does not exist' AS [Message]
 				END
 			ELSE IF (@Order_Status != 1)
 				BEGIN
-					PRINT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is not Completed! Feedback can only be given after Payment'
+					SELECT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is not Completed! Feedback can only be given after Payment' AS [Message]
 				END
 			ELSE IF (@Store_Rating_To_Process < 1) OR (@Store_Rating_To_Process > 5)
 				BEGIN
-					PRINT 'Invalid Store Rating! Rating must be between 1 and 5'
+					SELECT 'Invalid Store Rating! Rating must be between 1 and 5' AS [Message]
 				END
 			ELSE IF (@Cashier_Rating_To_Process < 1) OR (@Cashier_Rating_To_Process > 5)
 				BEGIN
-					PRINT 'Invalid Cashier Rating! Rating must be between 1 and 5'
+					SELECT 'Invalid Cashier Rating! Rating must be between 1 and 5' AS [Message]
 				END
 			ELSE IF (LEN(LTRIM(@Feedback_Detail)) < 5)
 				BEGIN
-					PRINT 'Invalid Feedback Detail! Feedback must have at least 5 characters'
+					SELECT 'Invalid Feedback Detail! Feedback must have at least 5 characters' AS [Message]
 				END
 			ELSE IF (LEN(@Feedback_Detail) > 255)
 				BEGIN
-					PRINT 'Invalid Feedback Detail! Feedback cannot be more than 255 characters'
+					SELECT 'Invalid Feedback Detail! Feedback cannot be more than 255 characters' AS [Message]
 				END
 			ELSE IF (PATINDEX('%  %', @Feedback_Detail) > 0)
 				BEGIN
-					PRINT 'Consecutive Spaces Not Allowed! Invalid Input'
+					SELECT 'Consecutive Spaces Not Allowed! Invalid Input' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM StoreCashierFeedback WHERE OrderID = @Order_Id_To_Process)
 				BEGIN
-					PRINT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' already exists'
+					SELECT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' already exists' AS [Message]
 				END
 			ELSE
 				BEGIN
 					SELECT @Feedback_Id = ISNULL(MAX(FeedbackID),0) + 1
-					FROM StoreCashierFeedback WITH (UPDLOCK, HOLDLOCK)
+					FROM dbo.StoreCashierFeedback
 
-					INSERT INTO StoreCashierFeedback(FeedbackID, OrderID, StoreRating, CashierRating, FeedbackDetail)
+					INSERT INTO dbo.StoreCashierFeedback(FeedbackID, OrderID, StoreRating, CashierRating, FeedbackDetail)
 						VALUES (@Feedback_Id, @Order_Id_To_Process, @Store_Rating_To_Process, @Cashier_Rating_To_Process,
 								LTRIM(RTRIM(@Feedback_Detail)))
-					PRINT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' successfully added in the Feedback Table'
+					SELECT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' successfully added in the Feedback Table' AS [Message]
 				END
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
-		Print Error_Message()
 		IF	(
 				SELECT PATINDEX('%UNIQUE KEY%',ERROR_MESSAGE())
 			) > 0
 			BEGIN
-				PRINT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' already exists'
+				SELECT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' already exists' AS [Message]
 			END
+		ELSE
+		BEGIN
+			SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
+			SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
+		END
 		IF @@TRANCOUNT > 0 ROLLBACK TRAN
 	END CATCH
 END

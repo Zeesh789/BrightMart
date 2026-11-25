@@ -26,16 +26,16 @@ BEGIN
 		IF (@Payment_Type IS NOT NULL) AND (@Payment_Type_To_Process IS NULL)
 			BEGIN
 				SELECT 'Invalid Payment Type! Payment Type must be Cash, Card or UPI' AS [Message] 
-			END;
-		ELSE IF NOT EXISTS (SELECT 1 FROM OrderTransaction)
+			END
+		ELSE IF NOT EXISTS (SELECT 1 FROM dbo.OrderTransaction)
 			BEGIN
 				SELECT 'No Transactions found' AS [Message]
-			END;
+			END
 		ELSE IF (@Payment_Type_To_Process IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM OrderTransaction WHERE PaymentType = @Payment_Type_To_Process)
+				AND NOT EXISTS (SELECT 1 FROM dbo.OrderTransaction WHERE PaymentType = @Payment_Type_To_Process)
 			BEGIN
 				SELECT 'No Transactions found for Payment Type ' + QUOTENAME(@Payment_Type,'''') AS [Message]
-			END;
+			END
 		ELSE
 			BEGIN
 				WITH PaymentTypeRanked(UsageRank,PaymentType,TotalTransactions, SuccessfullTransactions, SuccessRatePercent,AmountCollected)
@@ -70,13 +70,8 @@ BEGIN
 			END;
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO

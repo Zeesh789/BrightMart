@@ -25,11 +25,11 @@ BEGIN
 				SELECT  'Invalid Category Id' AS [Message]
 			END
 		ELSE IF (@Category_Id_To_Process IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM ProductCategory WHERE ProductCategoryId = @Category_Id_To_Process)
+				AND NOT EXISTS (SELECT 1 FROM dbo.ProductCategory WHERE ProductCategoryId = @Category_Id_To_Process)
 			BEGIN
 				Select 'Category ' + QUOTENAME(@CategoryID,'''') + ' does not exist' AS [Message]
 			END
-		ELSE IF NOT EXISTS (SELECT 1 FROM [Order] WHERE OrderStatus = 1)
+		ELSE IF NOT EXISTS (SELECT 1 FROM dbo.[Order] WHERE OrderStatus = 1)
 			BEGIN
 				SELECT 'No Sales found' AS [Message]
 			END;
@@ -76,13 +76,8 @@ BEGIN
 			END;
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO

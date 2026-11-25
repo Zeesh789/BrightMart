@@ -2,9 +2,9 @@
     Script Name         : usp_BestSellingProducts.sql
     Purpose             : Showing the Products ranked by the Quantity sold
     Created By          : Zeeshan Shaikh
-    Created On          : 16/11/26
+    Created On          : 23/11/26
     Modified By         : Zeeshan Shaikh
-    Modified On         : 16/11/26
+    Modified On         : 23/11/26
     Modified            : Version 1
 ****************************************************************/
 
@@ -23,7 +23,7 @@ BEGIN
 				SELECT  'Invalid Category Id' AS [Message]
 			END
 		ELSE IF (@Category_Id_To_Process IS NOT NULL)
-				AND NOT EXISTS (SELECT 1 FROM ProductCategory WHERE ProductCategoryId = @Category_Id_To_Process)
+				AND NOT EXISTS (SELECT 1 FROM dbo.ProductCategory WHERE ProductCategoryId = @Category_Id_To_Process)
 			BEGIN
 				Select 'Category ' + QUOTENAME(@Category_Id,'''') + ' does not exist' AS [Message]
 			END
@@ -58,13 +58,8 @@ BEGIN
 			END;
 	END TRY
 	BEGIN CATCH
-		Select 
-		   ERROR_NUMBER() as ErrorNumber,
-		   ERROR_MESSAGE() as ErrorMessage,
-		   ERROR_PROCEDURE() as ErrorProcedure,
-		   ERROR_STATE() as ErrorState,
-		   ERROR_SEVERITY() as ErrorSeverity,
-		   ERROR_LINE() as ErrorLine
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH;
 END;
 GO
