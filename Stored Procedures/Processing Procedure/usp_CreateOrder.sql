@@ -63,85 +63,85 @@ BEGIN
 			IF (@Customer_Id_To_Process IS NULL) OR (@Store_Id_To_Process IS NULL) OR (@Employee_Id_To_Process IS NULL)
 				OR (@Order_Date_Time_To_Process IS NULL)
 				BEGIN
-					PRINT 'Invalid Input Values'
+					SELECT 'Invalid Input Values' AS [Message]
 				END
 			ELSE IF NOT EXISTS (SELECT 1 FROM @Items_To_Process)
 				BEGIN
-					PRINT 'No Products in the Order'
+					SELECT 'No Products in the Order' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process WHERE (Product_Id IS NULL) OR (Product_Order_Count IS NULL) OR (Product_Order_Count <= 0))
 				BEGIN
-					PRINT 'Invalid Product Id or Product Count in the Order Products'
+					SELECT 'Invalid Product Id or Product Count in the Order Products' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT Product_Id FROM @Items_To_Process GROUP BY Product_Id HAVING COUNT(*) > 1)
 				BEGIN
-					PRINT 'Same Product added more than once! Increase the Product Count instead'
+					SELECT 'Same Product added more than once! Increase the Product Count instead' AS [Message]
 				END
 			ELSE IF (@Order_Date_Time_To_Process > GETDATE())
 				BEGIN
-					PRINT 'Order Date ' + QUOTENAME(@Order_Date_Time,'''') + ' cannot be in the Future'
+					SELECT 'Order Date ' + QUOTENAME(@Order_Date_Time,'''') + ' cannot be in the Future' AS [Message]
 				END
-			ELSE IF NOT EXISTS (SELECT 1 FROM Customer WHERE CustomerID = @Customer_Id_To_Process AND CustomerActiveStatus = 1)
+			ELSE IF NOT EXISTS (SELECT 1 FROM dbo.Customer WHERE CustomerID = @Customer_Id_To_Process AND CustomerActiveStatus = 1)
 				BEGIN
-					PRINT 'Customer ' + QUOTENAME(@Customer_Id,'''') + ' does not exist or is not Active'
+					SELECT 'Customer ' + QUOTENAME(@Customer_Id,'''') + ' does not exist or is not Active' AS [Message]
 				END
-			ELSE IF EXISTS (SELECT 1 FROM Customer WHERE CustomerID = @Customer_Id_To_Process AND CustomerRegisterDate > @Order_Date)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.Customer WHERE CustomerID = @Customer_Id_To_Process AND CustomerRegisterDate > @Order_Date)
 				BEGIN
-					PRINT 'Customer ' + QUOTENAME(@Customer_Id,'''') + ' was not Registered on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''')
+					SELECT 'Customer ' + QUOTENAME(@Customer_Id,'''') + ' was not Registered on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''') AS [Message]
 				END
-			ELSE IF NOT EXISTS (SELECT 1 FROM Store WHERE StoreID = @Store_Id_To_Process AND StoreActiveStatus = 1)
+			ELSE IF NOT EXISTS (SELECT 1 FROM dbo.Store WHERE StoreID = @Store_Id_To_Process AND StoreActiveStatus = 1)
 				BEGIN
-					PRINT 'Store ' + QUOTENAME(@Store_Id,'''') + ' does not exist or is not Active'
+					SELECT 'Store ' + QUOTENAME(@Store_Id,'''') + ' does not exist or is not Active' AS [Message]
 				END
-			ELSE IF EXISTS (SELECT 1 FROM Store WHERE StoreID = @Store_Id_To_Process AND StoreEstablishDate > @Order_Date)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.Store WHERE StoreID = @Store_Id_To_Process AND StoreEstablishDate > @Order_Date)
 				BEGIN
-					PRINT 'Store ' + QUOTENAME(@Store_Id,'''') + ' was not Open on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''')
+					SELECT 'Store ' + QUOTENAME(@Store_Id,'''') + ' was not Open on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''') AS [Message]
 				END
-			ELSE IF NOT EXISTS (SELECT 1 FROM StoreEmployee WHERE EmployeeID = @Employee_Id_To_Process AND EmployeeStoreID = @Store_Id_To_Process
+			ELSE IF NOT EXISTS (SELECT 1 FROM dbo.StoreEmployee WHERE EmployeeID = @Employee_Id_To_Process AND EmployeeStoreID = @Store_Id_To_Process
 								AND EmployeeActiveStatus = 1)
 				BEGIN
-					PRINT 'Employee ' + QUOTENAME(@Employee_Id,'''') + ' does not exist or does not work in Store ' + QUOTENAME(@Store_Id,'''')
+					SELECT 'Employee ' + QUOTENAME(@Employee_Id,'''') + ' does not exist or does not work in Store ' + QUOTENAME(@Store_Id,'''') AS [Message]
 				END
-			ELSE IF EXISTS (SELECT 1 FROM StoreEmployee WHERE EmployeeID = @Employee_Id_To_Process AND EmployeeJoinDate > @Order_Date)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.StoreEmployee WHERE EmployeeID = @Employee_Id_To_Process AND EmployeeJoinDate > @Order_Date)
 				BEGIN
-					PRINT 'Employee ' + QUOTENAME(@Employee_Id,'''') + ' had not Joined on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''')
+					SELECT 'Employee ' + QUOTENAME(@Employee_Id,'''') + ' had not Joined on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''') AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process I
-							LEFT JOIN Product P ON P.ProductID = I.Product_Id AND P.ProductActiveStatus = 1
+							LEFT JOIN dbo.[Product] P ON P.ProductID = I.Product_Id AND P.ProductActiveStatus = 1
 							WHERE P.ProductID IS NULL)
 				BEGIN
-					PRINT 'One or more Products do not exist or are not Active'
+					SELECT 'One or more Products do not exist or are not Active' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process I
-							JOIN Product P ON P.ProductID = I.Product_Id
+							INNER JOIN dbo.[Product] P ON P.ProductID = I.Product_Id
 							WHERE P.ProductIntroduceDate > @Order_Date)
 				BEGIN
-					PRINT 'One or more Products were not Introduced on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''')
+					SELECT 'One or more Products were not Introduced on ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date,23),'''') AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM @Items_To_Process I
-							JOIN Product P ON P.ProductID = I.Product_Id
+							INNER JOIN dbo.[Product] P ON P.ProductID = I.Product_Id
 							WHERE P.ProductAvailableCount < I.Product_Order_Count)
 				BEGIN
-					PRINT 'Not enough Stock for one or more Products'
+					SELECT 'Not enough Stock for one or more Products' AS [Message]
 				END
 			ELSE
 				BEGIN
 					SELECT @Order_Amount = SUM(I.Product_Order_Count * P.ProductPrice)
 					FROM @Items_To_Process I
-					JOIN Product P
+					INNER JOIN dbo.[Product] P
 					ON P.ProductID = I.Product_Id
 
 					SELECT @Order_Id = ISNULL(MAX(OrderID),0) + 1
-					FROM [Order] WITH (UPDLOCK, HOLDLOCK)
+					FROM dbo.[Order] WITH (UPDLOCK, HOLDLOCK)
 
-					INSERT INTO [Order](OrderID, CustomerID, StoreID, EmployeeStoreID, OrderAmount, OrderStatus, OrderDateTime)
+					INSERT INTO dbo.[Order](OrderID, CustomerID, StoreID, EmployeeStoreID, OrderAmount, OrderStatus, OrderDateTime)
 						VALUES (@Order_Id, @Customer_Id_To_Process, @Store_Id_To_Process, @Employee_Id_To_Process, @Order_Amount, 5,
 								@Order_Date_Time_To_Process)
 
-					INSERT INTO OrderProduct(OrderID, ProductID, ProductOrderCount, ProductPrice)
+					INSERT INTO dbo.OrderProduct(OrderID, ProductID, ProductOrderCount, ProductPrice)
 					SELECT @Order_Id, I.Product_Id, I.Product_Order_Count, P.ProductPrice
 					FROM @Items_To_Process I
-					JOIN Product P ON P.ProductID = I.Product_Id
+					INNER JOIN dbo.[Product] P ON P.ProductID = I.Product_Id
 
 					PRINT 'Order ' + QUOTENAME(CAST(@Order_Id AS VARCHAR),'''') + ' of amount ' + QUOTENAME(CAST(@Order_Amount AS VARCHAR),'''')
 						+ ' successfully added in the Order Queue'
@@ -149,7 +149,8 @@ BEGIN
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
-		Print Error_Message()
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 		IF @@TRANCOUNT > 0 ROLLBACK TRAN
 	END CATCH
 END
@@ -413,7 +414,7 @@ GO
 ------------------------------------------------------------------------------------
 
 DECLARE @Items OrderProductType
-INSERT INTO @Items VALUES ('1','500')
+INSERT INTO @Items VALUES ('1','10000')
 
 EXEC Usp_CreateOrder
 @Customer_Id = '1',
@@ -425,3 +426,4 @@ EXEC Usp_CreateOrder
 -- RESULT : TEST CASE 18 PASS
 GO
 ------------------------------------------------------------------------------------
+

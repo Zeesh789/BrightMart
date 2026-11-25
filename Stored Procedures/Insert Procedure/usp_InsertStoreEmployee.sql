@@ -15,26 +15,26 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertStoreEmployee
-@EmployeeStoreId      NVARCHAR(50)  = NULL,   -- required (INT)
-@EmployeeName         NVARCHAR(500) = NULL,   -- required
-@EmployeeGender       NVARCHAR(50)  = NULL,   -- required
-@EmployeeDOB          NVARCHAR(50)  = NULL,   -- required (DATE, yyyy-mm-dd)
-@EmployeeEmail        NVARCHAR(500) = NULL,   -- required
-@EmployeePhone        NVARCHAR(50)  = NULL,   -- required
-@EmployeeGovernmentId NVARCHAR(50)  = NULL,   -- required
-@EmployeeJoinDate     NVARCHAR(50)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
+@EmployeeStoreId      NVARCHAR(5)  = NULL,   -- required (INT)
+@EmployeeName         NVARCHAR(50) = NULL,   -- required
+@EmployeeGender       NVARCHAR(15)  = NULL,   -- required
+@EmployeeDOB          NVARCHAR(10)  = NULL,   -- required (DATE, yyyy-mm-dd)
+@EmployeeEmail        NVARCHAR(150) = NULL,   -- required
+@EmployeePhone        NVARCHAR(10)  = NULL,   -- required
+@EmployeeGovernmentId NVARCHAR(15)  = NULL,   -- required
+@EmployeeJoinDate     NVARCHAR(10)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	/*---------- Convert inputs to required datatypes ----------*/
 	DECLARE @vStoreId      INT          = TRY_CONVERT(INT, NULLIF(LTRIM(RTRIM(@EmployeeStoreId)), ''));
-	DECLARE @vName         VARCHAR(500) = TRY_CONVERT(VARCHAR(500), NULLIF(LTRIM(RTRIM(@EmployeeName)), ''));
-	DECLARE @vGender       VARCHAR(50)  = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@EmployeeGender)), ''));
+	DECLARE @vName         VARCHAR(50) = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@EmployeeName)), ''));
+	DECLARE @vGender       VARCHAR(12)  = TRY_CONVERT(VARCHAR(12), NULLIF(LTRIM(RTRIM(@EmployeeGender)), ''));
 	DECLARE @vDOB          DATE         = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@EmployeeDOB)), ''));
-	DECLARE @vEmail        VARCHAR(500) = TRY_CONVERT(VARCHAR(500), NULLIF(LOWER(LTRIM(RTRIM(@EmployeeEmail))), ''));
-	DECLARE @vPhone        VARCHAR(50)  = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@EmployeePhone)), ''));
-	DECLARE @vGovernmentId VARCHAR(50)  = TRY_CONVERT(VARCHAR(50), NULLIF(UPPER(LTRIM(RTRIM(@EmployeeGovernmentId))), ''));
+	DECLARE @vEmail        VARCHAR(100) = TRY_CONVERT(VARCHAR(100), NULLIF(LOWER(LTRIM(RTRIM(@EmployeeEmail))), ''));
+	DECLARE @vPhone        VARCHAR(10)  = TRY_CONVERT(VARCHAR(10), NULLIF(LTRIM(RTRIM(@EmployeePhone)), ''));
+	DECLARE @vGovernmentId VARCHAR(15)  = TRY_CONVERT(VARCHAR(15), NULLIF(UPPER(LTRIM(RTRIM(@EmployeeGovernmentId))), ''));
 	DECLARE @vJoinDate     DATE         = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@EmployeeJoinDate)), ''));
 	DECLARE @vToday        DATE         = CAST(GETDATE() AS DATE);
 	DECLARE @vAge          INT;
@@ -116,14 +116,16 @@ BEGIN
 			BEGIN
 				SELECT 'Email ' + QUOTENAME(@vEmail,'''') + ' already exists in the Store Employee Table' AS [Message]
 			END
-			-- Phone (10 digit Indian mobile starting 6-9)
+			-- Phone (10 digit mobile starting 6-9)
 			ELSE IF (@vPhone IS NULL)
 			BEGIN
 				SELECT 'Employee Phone is required' AS [Message]
 			END
-			ELSE IF (LEN(@vPhone) <> 10) OR (PATINDEX('%[^0-9]%', @vPhone) > 0) OR (LEFT(@vPhone, 1) NOT IN ('6', '7', '8', '9'))
+			ELSE IF (LEN(@vPhone) <> 10) OR (PATINDEX('%[^0-9]%', @vPhone) > 0) OR (LEFT(@vPhone, 1) NOT IN ('6', '7', '8', '9')) 
+					OR (@vPhone = '6666666666') OR (@vPhone = '7777777777') OR (@vPhone = '8888888888')
+					OR (@vPhone = '9999999999') 
 			BEGIN
-				SELECT 'INVALID Phone Number (10 digits, starting with 6-9)' AS [Message]
+				SELECT 'INVALID Phone Number (10 digits, starting with 6-9 AND Same Digit phone numbers are not Valid)' AS [Message]
 			END
 			ELSE IF EXISTS (SELECT 1 FROM StoreEmployee WHERE EmployeePhone = @vPhone)
 			BEGIN
@@ -155,6 +157,7 @@ BEGIN
 		IF ERROR_NUMBER() IN (2627, 2601)
 			SELECT 'Duplicate Email, Phone or Government Id - employee already exists' AS [Message]
 		ELSE
+			SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
 			SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH
 END

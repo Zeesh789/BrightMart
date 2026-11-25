@@ -12,7 +12,7 @@
 
 CREATE OR ALTER PROC
 Usp_ProcessPayment
-@Order_Id VARCHAR(10) = NULL,
+@Order_Id VARCHAR(5) = NULL,
 @Payment_Type VARCHAR(10) = NULL,
 @Payment_Result VARCHAR(10) = NULL,
 @Transaction_Date_Time VARCHAR(25) = NULL
@@ -25,7 +25,6 @@ BEGIN
 	DECLARE @Order_Amount DECIMAL(9,2)
 	DECLARE @Order_Status TINYINT
 	DECLARE @Order_Date_Time DATETIME
-	DECLARE @Last_Attempt_Date_Time DATETIME
 	BEGIN TRY
 		BEGIN TRAN
 			SET @Order_Id_To_Process = TRY_CONVERT(INT,@Order_Id)
@@ -37,95 +36,91 @@ BEGIN
 														 ELSE TRY_CONVERT(DATETIME,@Transaction_Date_Time,120) END
 
 			SELECT @Order_Amount = OrderAmount, @Order_Status = OrderStatus, @Order_Date_Time = OrderDateTime
-			FROM [Order]
+			FROM dbo.[Order]
 			WHERE OrderID = @Order_Id_To_Process
 
-			SELECT @Last_Attempt_Date_Time = MAX(TransactionDateTime)
-			FROM OrderTransaction
-			WHERE OrderID = @Order_Id_To_Process
 
 			IF (@Order_Id_To_Process IS NULL) OR (@Payment_Type IS NULL) OR (@Payment_Result IS NULL)
 				OR (@Payment_Type = '') OR (@Payment_Result = '') OR (@Transaction_Date_Time_To_Process IS NULL)
 				BEGIN
-					PRINT 'Invalid Input Values'
+					SELECT 'Invalid Input Values' AS [Message]
 				END
 			ELSE IF (@Order_Status IS NULL)
 				BEGIN
-					PRINT 'Order ' + QUOTENAME(@Order_Id,'''') + ' does not exist'
+					SELECT 'Order ' + QUOTENAME(@Order_Id,'''') + ' does not exist' AS [Message]
 				END
 			ELSE IF (@Order_Status = 1)
 				BEGIN
-					PRINT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is already Paid'
+					SELECT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is already Paid' AS [Message]
 				END
 			ELSE IF (@Order_Status != 5)
 				BEGIN
-					PRINT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is not Pending in the Queue'
+					SELECT 'Order ' + QUOTENAME(@Order_Id,'''') + ' is not Pending in the Queue' AS [Message]
 				END
 			ELSE IF (@Payment_Type_To_Process IS NULL)
 				BEGIN
-					PRINT 'Invalid Payment Type! Only Cash, Card or UPI allowed'
+					SELECT 'Invalid Payment Type! Only Cash, Card or UPI allowed' AS [Message]
 				END
 			ELSE IF (LOWER(@Payment_Result) != 'success') AND (LOWER(@Payment_Result) != 'failed')
 				BEGIN
-					PRINT 'Invalid Payment Result! Only Success or Failed allowed'
+					SELECT 'Invalid Payment Result! Only Success or Failed allowed' AS [Message]
 				END
 			ELSE IF (@Transaction_Date_Time_To_Process > GETDATE())
 				BEGIN
-					PRINT 'Transaction Date ' + QUOTENAME(@Transaction_Date_Time,'''') + ' cannot be in the Future'
+					SELECT 'Transaction Date ' + QUOTENAME(@Transaction_Date_Time,'''') + ' cannot be in the Future' AS [Message]
 				END
 			ELSE IF (@Transaction_Date_Time_To_Process < @Order_Date_Time)
 				BEGIN
-					PRINT 'Transaction Date cannot be before the Order Date ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date_Time,120),'''')
-				END
-			ELSE IF (@Transaction_Date_Time_To_Process < @Last_Attempt_Date_Time)
-				BEGIN
-					PRINT 'Transaction Date cannot be before the last Payment attempt ' + QUOTENAME(CONVERT(VARCHAR,@Last_Attempt_Date_Time,120),'''')
+					SELECT 'Transaction Date cannot be before the Order Date ' + QUOTENAME(CONVERT(VARCHAR,@Order_Date_Time,120),'''') AS [Message]
 				END
 			ELSE IF (LOWER(@Payment_Result) = 'failed')
 				BEGIN
-					INSERT INTO OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
+					INSERT INTO dbo.OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
 						VALUES (NEWID(), @Order_Id_To_Process, @Payment_Type_To_Process, @Transaction_Date_Time_To_Process, 0)
-					PRINT 'Payment Failed for Order ' + QUOTENAME(@Order_Id,'''') + '! Order is still Pending in the Queue'
+					SELECT 'Payment Failed for Order ' + QUOTENAME(@Order_Id,'''') + '! Order is still Pending in the Queue' AS [Message]
 				END
 			ELSE IF EXISTS (SELECT 1 FROM OrderProduct OP
-							JOIN Product P ON P.ProductID = OP.ProductID
+							INNER JOIN 
+							dbo.Product P ON P.ProductID = OP.ProductID
 							WHERE OP.OrderID = @Order_Id_To_Process
 							AND P.ProductAvailableCount < OP.ProductOrderCount)
 				BEGIN
-					INSERT INTO OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
+					INSERT INTO dbo.OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
 						VALUES (NEWID(), @Order_Id_To_Process, @Payment_Type_To_Process, @Transaction_Date_Time_To_Process, 0)
-					PRINT 'Not enough Stock! Payment Failed for Order ' + QUOTENAME(@Order_Id,'''')
+					SELECT 'Not enough Stock! Payment Failed for Order ' + QUOTENAME(@Order_Id,'''') AS [Message]
 				END
 			ELSE
 				BEGIN
-					INSERT INTO OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
+					INSERT INTO dbo.OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
 						VALUES (NEWID(), @Order_Id_To_Process, @Payment_Type_To_Process, @Transaction_Date_Time_To_Process, 1)
 
-					UPDATE [Order]
+					UPDATE dbo.[Order]
 					SET OrderStatus = 1
 					WHERE OrderID = @Order_Id_To_Process
 
 					UPDATE P
 					SET P.ProductAvailableCount = P.ProductAvailableCount - OP.ProductOrderCount
-					FROM Product P
-					JOIN OrderProduct OP ON OP.ProductID = P.ProductID
+					FROM dbo.Product P
+					INNER JOIN 
+					dbo.OrderProduct OP ON OP.ProductID = P.ProductID
 					WHERE OP.OrderID = @Order_Id_To_Process
 
-					PRINT 'Payment of ' + QUOTENAME(CAST(@Order_Amount AS VARCHAR),'''') + ' Successful for Order '
-						+ QUOTENAME(@Order_Id,'''') + '! Order Completed'
+					SELECT 'Payment of ' + QUOTENAME(CAST(@Order_Amount AS VARCHAR),'''') + ' Successful for Order '
+						+ QUOTENAME(@Order_Id,'''') + '! Order Completed'  AS [Message]
 				END
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
-		Print Error_Message()
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 		IF @@TRANCOUNT > 0 ROLLBACK TRAN
 		-- Failed Transaction is saved after the ROLLBACK so it is not undone
-		IF EXISTS (SELECT 1 FROM [Order] WHERE OrderID = @Order_Id_To_Process AND OrderStatus = 5)
+		IF EXISTS (SELECT 1 FROM dbo.[Order] WHERE OrderID = @Order_Id_To_Process AND OrderStatus = 5)
 			AND (@Payment_Type_To_Process IS NOT NULL) AND (@Transaction_Date_Time_To_Process IS NOT NULL)
 			BEGIN
-				INSERT INTO OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
+				INSERT INTO dbo.OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
 					VALUES (NEWID(), @Order_Id_To_Process, @Payment_Type_To_Process, @Transaction_Date_Time_To_Process, 0)
-				PRINT 'Payment Failed for Order ' + QUOTENAME(@Order_Id,'''') + '! Order is still Pending in the Queue'
+				SELECT 'Payment Failed for Order ' + QUOTENAME(@Order_Id,'''') + '! Order is still Pending in the Queue' AS [Message]
 			END
 	END CATCH
 END

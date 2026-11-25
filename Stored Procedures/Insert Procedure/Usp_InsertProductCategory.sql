@@ -41,7 +41,8 @@ BEGIN
 			END
 	END TRY
 	BEGIN CATCH
-			SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
+		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH
 END
 GO

@@ -14,16 +14,16 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertStore
-@StoreName       NVARCHAR(500) = NULL,    -- required
-@StoreLocationId NVARCHAR(50)  = NULL,    -- required (INT)
-@StoreManagerId  NVARCHAR(50)  = NULL,    -- optional (INT)
-@EstablishDate   NVARCHAR(50)  = NULL     -- optional (DATE, yyyy-mm-dd) : defaults to today
+@StoreName       NVARCHAR(50) = NULL,    -- required
+@StoreLocationId NVARCHAR(5)  = NULL,    -- required (INT)
+@StoreManagerId  NVARCHAR(5)  = NULL,    -- optional (INT)
+@EstablishDate   NVARCHAR(10)  = NULL     -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	/*---------- Convert inputs to required datatypes ----------*/
-	DECLARE @vStoreName       VARCHAR(500) = TRY_CONVERT(VARCHAR(500), NULLIF(LTRIM(RTRIM(@StoreName)), ''));
+	DECLARE @vStoreName       VARCHAR(50) = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@StoreName)), ''));
 	DECLARE @vStoreLocationId INT          = TRY_CONVERT(INT, NULLIF(LTRIM(RTRIM(@StoreLocationId)), ''));
 	DECLARE @vStoreManagerId  INT          = TRY_CONVERT(INT, NULLIF(LTRIM(RTRIM(@StoreManagerId)), ''));
 	DECLARE @vEstablishDate   DATE         = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@EstablishDate)), ''));
@@ -97,6 +97,7 @@ BEGIN
 			END
 	END TRY
 	BEGIN CATCH
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH
 END

@@ -14,19 +14,19 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertProduct
-@ProductCategoryId     NVARCHAR(50)  = NULL,   -- required (INT)
-@ProductName           NVARCHAR(500) = NULL,   -- required
-@ProductPrice          NVARCHAR(50)  = NULL,   -- required (DECIMAL)
-@ProductAvailableCount NVARCHAR(50)  = NULL,   -- required (INT)
-@ProductIntroduceDate  NVARCHAR(50)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
+@ProductCategoryId     NVARCHAR(5)  = NULL,   -- required (INT)
+@ProductName           NVARCHAR(50) = NULL,   -- required
+@ProductPrice          NVARCHAR(10)  = NULL,   -- required (DECIMAL)
+@ProductAvailableCount NVARCHAR(7)  = NULL,   -- required (INT)
+@ProductIntroduceDate  NVARCHAR(1)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	/*---------- Convert inputs to required datatypes ----------*/
 	DECLARE @vCategoryId    INT            = TRY_CONVERT(INT, NULLIF(LTRIM(RTRIM(@ProductCategoryId)), ''));
-	DECLARE @vProductName   VARCHAR(500)   = TRY_CONVERT(VARCHAR(500), NULLIF(LTRIM(RTRIM(@ProductName)), ''));
-	DECLARE @vPrice         DECIMAL(18, 2) = TRY_CONVERT(DECIMAL(18, 2), NULLIF(LTRIM(RTRIM(@ProductPrice)), ''));
+	DECLARE @vProductName   VARCHAR(50)   = TRY_CONVERT(VARCHAR(500), NULLIF(LTRIM(RTRIM(@ProductName)), ''));
+	DECLARE @vPrice         DECIMAL(7, 2) = TRY_CONVERT(DECIMAL(7, 2), NULLIF(LTRIM(RTRIM(@ProductPrice)), ''));
 	DECLARE @vCount         INT            = TRY_CONVERT(INT, NULLIF(LTRIM(RTRIM(@ProductAvailableCount)), ''));
 	DECLARE @vIntroduceDate DATE           = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@ProductIntroduceDate)), ''));
 	DECLARE @vToday         DATE           = CAST(GETDATE() AS DATE);
@@ -89,7 +89,7 @@ BEGIN
 			BEGIN
 				SELECT 'Product Introduce Date cannot be in the future' AS [Message]
 			END
-			ELSE IF (@vIntroduceDate < (SELECT ProductCategoryEstablishDate FROM ProductCategory WHERE ProductCategoryID = @vCategoryId))
+			ELSE IF (@vIntroduceDate < (SELECT ProductCategoryIntroduceDate FROM ProductCategory WHERE ProductCategoryID = @vCategoryId))
 			BEGIN
 				SELECT 'Product Introduce Date cannot be before the Category Establish Date' AS [Message]
 			END
@@ -102,6 +102,7 @@ BEGIN
 			END
 	END TRY
 	BEGIN CATCH
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH
 END

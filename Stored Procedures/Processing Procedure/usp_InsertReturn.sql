@@ -20,7 +20,7 @@ GO
 
 CREATE OR ALTER PROC
 Usp_InsertReturn
-@Order_Id VARCHAR(10) = NULL,
+@Order_Id VARCHAR(5) = NULL,
 @Return_Date_Time VARCHAR(25) = NULL,
 @Return_Products ReturnProductType READONLY
 AS

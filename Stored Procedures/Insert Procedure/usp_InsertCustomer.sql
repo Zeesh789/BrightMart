@@ -15,21 +15,21 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertCustomer
-@CustomerName         NVARCHAR(500) = NULL,   -- required
-@CustomerPhone        NVARCHAR(50)  = NULL,   -- required
-@CustomerEmail        NVARCHAR(500) = NULL,   -- optional
-@CustomerGender       NVARCHAR(50)  = NULL,   -- optional
-@CustomerDOB          NVARCHAR(50)  = NULL,   -- optional (DATE, yyyy-mm-dd)
-@CustomerRegisterDate NVARCHAR(50)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
+@CustomerName         NVARCHAR(50) = NULL,   -- required
+@CustomerPhone        NVARCHAR(10)  = NULL,   -- required
+@CustomerEmail        NVARCHAR(100) = NULL,   -- optional
+@CustomerGender       NVARCHAR(10)  = NULL,   -- optional
+@CustomerDOB          NVARCHAR(10)  = NULL,   -- optional (DATE, yyyy-mm-dd)
+@CustomerRegisterDate NVARCHAR(12)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	/*---------- Convert inputs to required datatypes ----------*/
-	DECLARE @vName         VARCHAR(500) = TRY_CONVERT(VARCHAR(500), NULLIF(LTRIM(RTRIM(@CustomerName)), ''));
-	DECLARE @vPhone        VARCHAR(50)  = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@CustomerPhone)), ''));
-	DECLARE @vEmail        VARCHAR(500) = TRY_CONVERT(VARCHAR(500), NULLIF(LOWER(LTRIM(RTRIM(@CustomerEmail))), ''));
-	DECLARE @vGender       VARCHAR(50)  = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@CustomerGender)), ''));
+	DECLARE @vName         VARCHAR(50) = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@CustomerName)), ''));
+	DECLARE @vPhone        VARCHAR(10)  = TRY_CONVERT(VARCHAR(10), NULLIF(LTRIM(RTRIM(@CustomerPhone)), ''));
+	DECLARE @vEmail        VARCHAR(100) = TRY_CONVERT(VARCHAR(100), NULLIF(LOWER(LTRIM(RTRIM(@CustomerEmail))), ''));
+	DECLARE @vGender       VARCHAR(10)  = TRY_CONVERT(VARCHAR(10), NULLIF(LTRIM(RTRIM(@CustomerGender)), ''));
 	DECLARE @vDOB          DATE         = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@CustomerDOB)), ''));
 	DECLARE @vRegisterDate DATE         = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@CustomerRegisterDate)), ''));
 	DECLARE @vToday        DATE         = CAST(GETDATE() AS DATE);
@@ -66,7 +66,7 @@ BEGIN
 			BEGIN
 				SELECT 'INVALID Phone Number (10 digits, starting with 6-9)' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM Customer WHERE CustomerPhone = @vPhone AND Customer_Active_Status = 1)
+			ELSE IF EXISTS (SELECT 1 FROM Customer WHERE CustomerPhone = @vPhone AND CustomerActiveStatus = 1)
 			BEGIN
 				SELECT 'An active customer with Phone ' + QUOTENAME(@vPhone,'''') + ' already exists' AS [Message]
 			END
@@ -78,7 +78,7 @@ BEGIN
 				SELECT 'INVALID Email Address' AS [Message]
 			END
 			ELSE IF (@vEmail IS NOT NULL)
-			AND EXISTS (SELECT 1 FROM Customer WHERE CustomerEmail = @vEmail AND Customer_Active_Status = 1)
+			AND EXISTS (SELECT 1 FROM Customer WHERE CustomerEmail = @vEmail AND CustomerActiveStatus = 1)
 			BEGIN
 				SELECT 'An active customer with Email ' + QUOTENAME(@vEmail,'''') + ' already exists' AS [Message]
 			END
@@ -116,6 +116,7 @@ BEGIN
 			END
 	END TRY
 	BEGIN CATCH
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH
 END

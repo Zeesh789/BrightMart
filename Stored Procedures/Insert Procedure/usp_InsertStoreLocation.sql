@@ -21,10 +21,14 @@ BEGIN
 	SET @LocationArea = LTRIM(RTRIM(@LocationArea));
 	SET @StoreAddress = LTRIM(RTRIM(@StoreAddress));
 	BEGIN TRY
-			IF (@LocationArea IS NULL) OR (@LocationArea = '') OR (PATINDEX('%[^a-zA-Z ]%', @LocationArea) > 0)
+			IF (@LocationArea IS NULL) OR (@LocationArea = '') OR (PATINDEX('%[^a-zA-Z0-9 ]%', @LocationArea) > 0)
 			OR (LEN(@LocationArea) < 3) OR (LEN(@LocationArea) > 50)
 			BEGIN
 				SELECT 'INVALID Location Area (letters and spaces only, 3 to 50 characters)' AS [Message]
+			END
+			ELSE IF (PATINDEX('[0-9]', @LocationArea) > 0) AND (PATINDEX('[a-zA-Z]', @LocationArea) = 0)
+			BEGIN
+				SELECT 'Only Numbers are not Valid as Area Location. Please Enter a Valid Input' AS [Message]
 			END
 			ELSE IF (CHARINDEX('  ', @LocationArea) > 0)
 			BEGIN
@@ -52,6 +56,7 @@ BEGIN
 			END
 	END TRY
 	BEGIN CATCH
+		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 	END CATCH
 END
