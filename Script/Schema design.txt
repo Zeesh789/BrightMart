@@ -1,0 +1,62 @@
+Store: 
+	StoreId [INT] [IDENTITY] [PK] 
+	StoreName [VARCHAR(50)] NOT NULL
+	StoreLocationCode [INT][FK StoreLocation StorelocationCode] NOT NULL
+	StoreManagerId [INT] [FK StoreEmployee EmployeeId] NULL
+	StoreEstablishmentDate [DATE] NOT NULL
+	StoreActiveStatus [BIT] NOT NULL
+	StoreClosingDate [DATE] NULL
+	
+StoreLocation:
+	StoreLocationId [INT] [IDENTITY] [PK] 
+	StoreLocationArea [VARCHAR(50)] NOT NULL
+	StoreAddress [VARCHAR(255)] NOT NULL UNIQUE	
+
+StoreEmployee: 
+	EmployeeId [INT] [PK] 
+	EmployeeStoreId [INT] [FK Store StoreId] NOT NULL
+	EmployeeName [VARCHAR(50)] NOT NULL
+	EmployeeGender [VARCHAR(15)] NOT NULL
+	EmployeeDOB [DATE] NOT NULL
+	EmployeeEmailId [VARCHAR(255)] NULL 
+	EmployeePhone [VARCHAR(10)] NOT NULL UNIQUE
+	EmployeeGovernmentId [VARCHAR(12)] NOT NULL UNIQUE
+	EmployeeRole NOT NULL 
+	EmployeeJoinDate [DATE] NOT NULL
+	EmployeeActiveStatue [BIT] NOT NULL
+	EmployeeLeaveDate [DATE] NULL
+
+ProductCategory:
+	ProductCategoryId [INT] [IDENTITY] [PK]
+	ProductCategoryName [VARCHAR(20)] UNIQUE
+	ProductCategoryEstablishDate [DATE] NOT NULL
+	ProductCategoryActiveStatus [BIT] NOT NULL
+	ProductCategoryClosingDate [DATE] NULL
+
+Product:
+	ProductId [INT] [IDENTITY] [PK]
+	ProductCategoryId [INT] [FK ProductCategory  ProductCategoryId] NOT NULL
+	ProductName [VARCHAR(50)] NOT NULL
+	ProductPrice [DECIMAL(7,2)] NOT NULL
+	ProductIntroduceDate [DATE] NOT NULL
+	ProductActiveStatus [BIT] NOT NULL
+	ProductDiscontinueDate [DATE] NULL
+	
+
+Customer:
+	CustomerId [INT] [IDENTITY] [PK]
+	CustomerName [VARCHAR(50)] NOT NULL
+	CustomerEmail [VARCHAR(255)] NULL
+	CustomerPhone [VARCHAR(10)] NOT NULL
+	CustomerGender [VARCHAR(15)] NULL
+	CustomerDOB [DATE] NULL
+	CustomerRegisterDate [DATE] NOT NULL
+	CustomerActiveStatus [BIT] NOT NULL
+	CustomerDeactivationDate [Date] NULL
+
+
+
+
+
+
+
