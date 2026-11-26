@@ -38,7 +38,7 @@ BEGIN
 				AS
 				(
 					SELECT
-						RANK() OVER (ORDER BY ISNULL(SUM(O.OrderAmount), 0) DESC) AS SalesRank,
+						DENSE_RANK() OVER (ORDER BY ISNULL(SUM(O.OrderAmount), 0) DESC) AS SalesRank,
 						S.StoreID,
 						S.StoreName,
 						ISNULL(SUM(O.OrderAmount), 0) AS GrossSales,

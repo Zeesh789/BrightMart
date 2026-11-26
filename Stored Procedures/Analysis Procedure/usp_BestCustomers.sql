@@ -19,7 +19,7 @@ BEGIN
 	SET NOCOUNT ON;
 	BEGIN TRY
 		SELECT
-			RANK() OVER (ORDER BY SUM(O.OrderAmount) DESC) AS Customer_Rank,
+			DENSE_RANK() OVER (ORDER BY SUM(O.OrderAmount) DESC) AS Customer_Rank,
 			C.CustomerName,
 			dbo.fnComputeAge(CustomerDOB) AS CustomerAge,
 			SUM(O.OrderAmount) AS TotalSpent,

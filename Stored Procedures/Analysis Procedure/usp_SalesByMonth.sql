@@ -42,7 +42,7 @@ BEGIN
 				AS
 				(
 					SELECT
-						RANK() OVER (ORDER BY SUM(OrderAmount) DESC) AS Sales_Rank,
+						DENSE_RANK() OVER (ORDER BY SUM(OrderAmount) DESC) AS Sales_Rank,
 						FORMAT(DATEFROMPARTS(YEAR(OrderDateTime), MONTH(OrderDateTime), 1), 'MMMM yyyy') AS Month_Name,
 						SUM(OrderAmount) AS Gross_Sales
 					FROM dbo.[Order]
