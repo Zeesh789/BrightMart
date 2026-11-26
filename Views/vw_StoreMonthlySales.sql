@@ -37,8 +37,7 @@ AS
 		O.OrderAmount
 		FROM 
 			dbo.Store S
-		LEFT JOIN dbo.[Order] O
-			ON O.StoreID = S.StoreID
+		LEFT JOIN dbo.[Order] O ON O.StoreID = S.StoreID
 			AND O.OrderStatus = 1
 	) AS StoreSales
 	PIVOT
