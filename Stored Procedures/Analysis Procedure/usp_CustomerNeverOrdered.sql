@@ -7,6 +7,10 @@
     Modified On         : 23/11/26
     Modified            : Version 1
 ****************************************************************/
+
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_CustomerNeverOrdered
 AS

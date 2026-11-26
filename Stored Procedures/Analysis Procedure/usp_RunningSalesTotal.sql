@@ -8,6 +8,10 @@
     Modified            : Version 1
 
 ****************************************************************/
+
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_RunningSalesTotal
 @Sales_Month VARCHAR(10) = NULL

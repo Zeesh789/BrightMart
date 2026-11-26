@@ -10,6 +10,9 @@
     Modified            : Version 1
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_BestPerformingCashiers
 @Store_Id VARCHAR(4) = NULL

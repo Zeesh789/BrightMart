@@ -8,6 +8,9 @@
     Modified            : Version 1
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_BestSellingProducts
 @Category_Id VARCHAR(10)  = NULL

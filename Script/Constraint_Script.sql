@@ -101,14 +101,6 @@ ALTER TABLE "Customer"
 ALTER TABLE "Product"
     ADD CONSTRAINT "UQ_Product_Category_Name" UNIQUE ("ProductCategoryID", "ProductName");
 
-
--- Customer email is optional but must be unique when given
--- (a UNIQUE constraint would allow only one NULL, so use a filtered index)
-CREATE UNIQUE NONCLUSTERED INDEX "UQ_Customer_CustomerEmail"
-    ON "Customer" ("CustomerEmail")
-    WHERE "CustomerEmail" IS NOT NULL;
-GO
-
 /* =====================================================================
    CHECK CONSTRAINTS
    ===================================================================== */
@@ -169,7 +161,12 @@ GO
    ===================================================================== */
 
 
-CREATE NONCLUSTERED INDEX "IX_Order_StoreID"              ON "Order" ("StoreID");
-CREATE NONCLUSTERED INDEX "IX_Order_OrderStatus"          ON "Order" ("OrderStatus");
-CREATE NONCLUSTERED INDEX "IX_Order_OrderDateTime"        ON "Order" ("OrderDateTime");   -- for monthly sales reports
+CREATE NONCLUSTERED INDEX "IX_Order_StoreID"              ON "Order" ("StoreID");			-- for Sales by Store reports
+CREATE NONCLUSTERED INDEX "IX_Order_OrderStatus"          ON "Order" ("OrderStatus");		-- Almost for every Procedure
+CREATE NONCLUSTERED INDEX "IX_Order_OrderDateTime"        ON "Order" ("OrderDateTime");		-- for monthly sales reports
+
+-- Customer email is optional but must be unique when given
+CREATE UNIQUE NONCLUSTERED INDEX "UQ_Customer_CustomerEmail"
+    ON "Customer" ("CustomerEmail")
+    WHERE "CustomerEmail" IS NOT NULL;
 GO

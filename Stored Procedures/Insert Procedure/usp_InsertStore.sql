@@ -5,19 +5,17 @@
     Created On          : 20/11/26
     Modified By         : Zeeshan Shaikh
     Modified On         : 20/11/26
-    Modified            : Version 2 - parameters accepted as NULL-able text,
-                          converted with TRY_CONVERT into typed variables
 ****************************************************************/
 
 USE BrightmartV2;
 GO
 
-CREATE OR ALTER PROC
+CREATE OR ALTER PROC 
 usp_InsertStore
-@StoreName       NVARCHAR(50) = NULL,    -- required
-@StoreLocationId NVARCHAR(5)  = NULL,    -- required (INT)
-@StoreManagerId  NVARCHAR(5)  = NULL,    -- optional (INT)
-@EstablishDate   NVARCHAR(10)  = NULL     -- optional (DATE, yyyy-mm-dd) : defaults to today
+@StoreName       VARCHAR(50) = NULL,    -- required
+@StoreLocationId VARCHAR(5)  = NULL,    -- required (INT)
+@StoreManagerId  VARCHAR(5)  = NULL,    -- optional (INT)
+@EstablishDate   VARCHAR(10)  = NULL     -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -43,11 +41,15 @@ BEGIN
 			BEGIN
 				SELECT 'INVALID Store Name (letters, digits, spaces, & and - only, 3 to 50 characters)' AS [Message]
 			END
+			ELSE IF (PATINDEX('[0-9]', @vStoreName) > 0) AND (PATINDEX('[a-zA-Z]', @vStoreName) = 0)
+			BEGIN
+				SELECT 'Only Numbers are not Valid as Store Name. Please Enter a Valid Input' AS [Message]
+			END
 			ELSE IF (CHARINDEX('  ', @vStoreName) > 0)
 			BEGIN
 				SELECT 'Consecutive Spaces Not Allowed in Store Name! Invalid Input' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM Store WHERE StoreName = @vStoreName)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.Store WHERE StoreName = @vStoreName)
 			BEGIN
 				SELECT 'Store ' + QUOTENAME(@vStoreName,'''') + ' already exists in the Store Table' AS [Message]
 			END
@@ -56,11 +58,11 @@ BEGIN
 			BEGIN
 				SELECT 'Store Location Id is required and must be a whole number' AS [Message]
 			END
-			ELSE IF NOT EXISTS (SELECT 1 FROM StoreLocation WHERE StoreLocationId = @vStoreLocationId)
+			ELSE IF NOT EXISTS (SELECT 1 FROM dbo.StoreLocation WHERE StoreLocationId = @vStoreLocationId)
 			BEGIN
 				SELECT 'INVALID Store Location Id - location does not exist' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM Store WHERE StoreLocationId = @vStoreLocationId AND StoreActiveStatus = 1)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.Store WHERE StoreLocationId = @vStoreLocationId AND StoreActiveStatus = 1)
 			BEGIN
 				SELECT 'An active store already exists at Store Location Id ' + CAST(@vStoreLocationId AS VARCHAR(10)) AS [Message]
 			END
@@ -70,12 +72,12 @@ BEGIN
 				SELECT 'INVALID Store Manager Id - must be a whole number' AS [Message]
 			END
 			ELSE IF (@vStoreManagerId IS NOT NULL)
-			AND NOT EXISTS (SELECT 1 FROM StoreEmployee WHERE EmployeeId = @vStoreManagerId AND EmployeeActiveStatus = 1)
+			AND NOT EXISTS (SELECT 1 FROM dbo.StoreEmployee WHERE EmployeeId = @vStoreManagerId AND EmployeeActiveStatus = 1)
 			BEGIN
 				SELECT 'INVALID Store Manager Id - employee does not exist or is inactive' AS [Message]
 			END
 			ELSE IF (@vStoreManagerId IS NOT NULL)
-			AND EXISTS (SELECT 1 FROM Store WHERE StoreManagerId = @vStoreManagerId AND StoreActiveStatus = 1)
+			AND EXISTS (SELECT 1 FROM dbo.Store WHERE StoreManagerId = @vStoreManagerId AND StoreActiveStatus = 1)
 			BEGIN
 				SELECT 'Employee ' + CAST(@vStoreManagerId AS VARCHAR(10)) + ' is already managing another active store' AS [Message]
 			END
@@ -90,7 +92,7 @@ BEGIN
 			END
 			ELSE
 			BEGIN
-				INSERT INTO Store(StoreName, StoreLocationId, StoreManagerId, StoreEstablishDate)
+				INSERT INTO dbo.Store(StoreName, StoreLocationId, StoreManagerId, StoreEstablishDate)
 				VALUES(@vStoreName, @vStoreLocationId, @vStoreManagerId, @vEstablishDate)
 				SELECT 'Store ' + QUOTENAME(@vStoreName,'''') + ' successfully added in the Store Table with ID '
 					   + CAST(SCOPE_IDENTITY() AS VARCHAR(10)) AS [Message]

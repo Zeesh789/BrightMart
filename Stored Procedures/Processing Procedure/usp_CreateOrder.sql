@@ -7,19 +7,10 @@
     Modified By         : Zeeshan Shaikh
     Modified On         : 23/11/26
     Modified            : Version 1
-
-    Note                : Order Products are passed using the OrderProductType
-                          Table Valued Parameter. Product Price is taken
-                          from the Product table, not from the input.
-                          Status values (Status table) : 0 = False,
-                          1 = True, 5 = Pending. A new Order is saved as 5.
-                          @Order_Date_Time is optional ('YYYY-MM-DD HH:MM:SS').
-                          If not passed, the current date and time is used.
-                          The Order date cannot be before the Customer
-                          Register date, Store Establish date, Employee Join
-                          date or Product Introduce date.
-                          OrderID is generated as MAX(OrderID) + 1.
 ****************************************************************/
+
+USE BrightMartV2;
+GO
 
 IF TYPE_ID('OrderProductType') IS NULL
 	CREATE TYPE OrderProductType AS TABLE(
@@ -45,20 +36,20 @@ BEGIN
 	DECLARE @Order_Date DATE
 	DECLARE @Order_Id INT
 	DECLARE @Order_Amount DECIMAL(9,2)
-	DECLARE @Items_To_Process TABLE (Product_Id INT, Product_Order_Count INT)
+	DECLARE @Items_To_Process TABLE (Product_Id INT, Product_Order_Count INT);
 	BEGIN TRY
 		BEGIN TRAN
-			SET @Customer_Id_To_Process = TRY_CONVERT(INT,@Customer_Id)
-			SET @Store_Id_To_Process = TRY_CONVERT(INT,@Store_Id)
-			SET @Employee_Id_To_Process = TRY_CONVERT(INT,@Employee_Id)
+			SET @Customer_Id_To_Process = TRY_CONVERT(INT,@Customer_Id);
+			SET @Store_Id_To_Process = TRY_CONVERT(INT,@Store_Id);
+			SET @Employee_Id_To_Process = TRY_CONVERT(INT,@Employee_Id);
 			SET @Order_Date_Time_To_Process = CASE WHEN @Order_Date_Time IS NULL THEN GETDATE()
 												   WHEN LTRIM(@Order_Date_Time) = '' THEN NULL
-												   ELSE TRY_CONVERT(DATETIME,@Order_Date_Time,120) END
-			SET @Order_Date = CAST(@Order_Date_Time_To_Process AS DATE)
+												   ELSE TRY_CONVERT(DATETIME,@Order_Date_Time,120) END;
+			SET @Order_Date = CAST(@Order_Date_Time_To_Process AS DATE);
 
 			INSERT INTO @Items_To_Process(Product_Id, Product_Order_Count)
 			SELECT TRY_CONVERT(INT,Product_Id), TRY_CONVERT(INT,Product_Order_Count)
-			FROM @Order_Products
+			FROM @Order_Products;
 
 			IF (@Customer_Id_To_Process IS NULL) OR (@Store_Id_To_Process IS NULL) OR (@Employee_Id_To_Process IS NULL)
 				OR (@Order_Date_Time_To_Process IS NULL)
@@ -132,7 +123,7 @@ BEGIN
 					ON P.ProductID = I.Product_Id
 
 					SELECT @Order_Id = ISNULL(MAX(OrderID),0) + 1
-					FROM dbo.[Order] WITH (UPDLOCK, HOLDLOCK)
+					FROM dbo.[Order] 
 
 					INSERT INTO dbo.[Order](OrderID, CustomerID, StoreID, EmployeeStoreID, OrderAmount, OrderStatus, OrderDateTime)
 						VALUES (@Order_Id, @Customer_Id_To_Process, @Store_Id_To_Process, @Employee_Id_To_Process, @Order_Amount, 5,
@@ -145,15 +136,15 @@ BEGIN
 
 					PRINT 'Order ' + QUOTENAME(CAST(@Order_Id AS VARCHAR),'''') + ' of amount ' + QUOTENAME(CAST(@Order_Amount AS VARCHAR),'''')
 						+ ' successfully added in the Order Queue'
-				END
+				END;
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
 		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
-		IF @@TRANCOUNT > 0 ROLLBACK TRAN
-	END CATCH
-END
+		IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+	END CATCH;
+END;
 GO
 
 -- Customer 1 registered 05-Feb, Employee 2 (Store 1) joined 09-Feb

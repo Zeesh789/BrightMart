@@ -10,6 +10,9 @@
     Modified            : Version 1
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_MostUsedPaymentType
 @Payment_Type VARCHAR(10) = NULL

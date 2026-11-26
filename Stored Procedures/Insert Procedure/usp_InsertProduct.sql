@@ -5,8 +5,7 @@
     Created On          : 20/11/26
     Modified By         : Zeeshan Shaikh
     Modified On         : 20/11/26
-    Modified            : Version 2 - parameters accepted as NULL-able text,
-                          converted with TRY_CONVERT into typed variables
+	Version				: Version 1
 ****************************************************************/
 
 USE BrightmartV2;
@@ -14,11 +13,11 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertProduct
-@ProductCategoryId     NVARCHAR(5)  = NULL,   -- required (INT)
-@ProductName           NVARCHAR(50) = NULL,   -- required
-@ProductPrice          NVARCHAR(10)  = NULL,   -- required (DECIMAL)
-@ProductAvailableCount NVARCHAR(7)  = NULL,   -- required (INT)
-@ProductIntroduceDate  NVARCHAR(1)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
+@ProductCategoryId     VARCHAR(5)  = NULL,   -- required (INT)
+@ProductName           VARCHAR(52) = NULL,   -- required
+@ProductPrice          VARCHAR(10)  = NULL,   -- required (DECIMAL)
+@ProductAvailableCount VARCHAR(7)  = NULL,   -- required (INT)
+@ProductIntroduceDate  VARCHAR(10)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -41,7 +40,7 @@ BEGIN
 			BEGIN
 				SELECT 'Product Category Id is required and must be a whole number' AS [Message]
 			END
-			ELSE IF NOT EXISTS (SELECT 1 FROM ProductCategory WHERE ProductCategoryID = @vCategoryId AND ProductCategoryActiveStatus = 1)
+			ELSE IF NOT EXISTS (SELECT 1 FROM dbo.ProductCategory WHERE ProductCategoryID = @vCategoryId AND ProductCategoryActiveStatus = 1)
 			BEGIN
 				SELECT 'INVALID Product Category Id - category does not exist or is inactive' AS [Message]
 			END
@@ -58,7 +57,7 @@ BEGIN
 			BEGIN
 				SELECT 'Consecutive Spaces Not Allowed in Product Name! Invalid Input' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM Product WHERE ProductName = @vProductName AND ProductCategoryId = @vCategoryId)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.[Product] WHERE ProductName = @vProductName AND ProductCategoryId = @vCategoryId)
 			BEGIN
 				SELECT 'Product ' + QUOTENAME(@vProductName,'''') + ' already exists in this Category' AS [Message]
 			END
@@ -89,13 +88,13 @@ BEGIN
 			BEGIN
 				SELECT 'Product Introduce Date cannot be in the future' AS [Message]
 			END
-			ELSE IF (@vIntroduceDate < (SELECT ProductCategoryIntroduceDate FROM ProductCategory WHERE ProductCategoryID = @vCategoryId))
+			ELSE IF (@vIntroduceDate < (SELECT ProductCategoryIntroduceDate FROM dbo.ProductCategory WHERE ProductCategoryID = @vCategoryId))
 			BEGIN
 				SELECT 'Product Introduce Date cannot be before the Category Establish Date' AS [Message]
 			END
 			ELSE
 			BEGIN
-				INSERT INTO Product(ProductCategoryId, ProductName, ProductPrice, ProductAvailableCount, ProductIntroduceDate)
+				INSERT INTO dbo.Product(ProductCategoryId, ProductName, ProductPrice, ProductAvailableCount, ProductIntroduceDate)
 				VALUES(@vCategoryId, @vProductName, @vPrice, @vCount, @vIntroduceDate)
 				SELECT 'Product ' + QUOTENAME(@vProductName,'''') + ' successfully added in the Product Table with ID '
 					   + CAST(SCOPE_IDENTITY() AS VARCHAR(10)) AS [Message]

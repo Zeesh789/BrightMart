@@ -10,6 +10,9 @@
     Note                : Month is passed in 'MM-YYYY' format (e.g. '09-2026').
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_SalesByMonth
 @Month VARCHAR(7) = NULL

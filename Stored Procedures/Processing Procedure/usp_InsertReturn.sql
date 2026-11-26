@@ -10,6 +10,9 @@
     Modified            : Version 1
 ****************************************************************/
 
+USE BrightMartV2;
+GO
+
 IF TYPE_ID('ReturnProductType') IS NULL
 	CREATE TYPE ReturnProductType AS TABLE(
 		"Product_Id" VARCHAR(10) NULL,
@@ -32,25 +35,25 @@ BEGIN
 	DECLARE @Payment_Date_Time DATETIME
 	DECLARE @Return_Id INT
 	DECLARE @Return_Amount DECIMAL(9,2)
-	DECLARE @Items_To_Process TABLE (Product_Id INT, Product_Return_Count INT, Return_Reason VARCHAR(255))
+	DECLARE @Items_To_Process TABLE (Product_Id INT, Product_Return_Count INT, Return_Reason VARCHAR(255));
 	BEGIN TRY
 		BEGIN TRAN
-			SET @Order_Id_To_Process = TRY_CONVERT(INT,@Order_Id)
+			SET @Order_Id_To_Process = TRY_CONVERT(INT,@Order_Id);
 			SET @Return_Date_Time_To_Process = CASE WHEN @Return_Date_Time IS NULL THEN GETDATE()
 													WHEN LTRIM(@Return_Date_Time) = '' THEN NULL
-													ELSE TRY_CONVERT(DATETIME,@Return_Date_Time,120) END
+													ELSE TRY_CONVERT(DATETIME,@Return_Date_Time,120) END;
 
 			SELECT @Order_Status = OrderStatus
 			FROM dbo.[Order]
-			WHERE OrderID = @Order_Id_To_Process
+			WHERE OrderID = @Order_Id_To_Process;
 
 			SELECT @Payment_Date_Time = MAX(TransactionDateTime)
 			FROM dbo.OrderTransaction
-			WHERE OrderID = @Order_Id_To_Process AND TransactionStatus = 1
+			WHERE OrderID = @Order_Id_To_Process AND TransactionStatus = 1;
 
 			INSERT INTO @Items_To_Process(Product_Id, Product_Return_Count, Return_Reason)
 			SELECT TRY_CONVERT(INT,Product_Id), TRY_CONVERT(INT,Product_Return_Count), LTRIM(RTRIM(Return_Reason))
-			FROM @Return_Products
+			FROM @Return_Products;
 
 			IF (@Order_Id_To_Process IS NULL) OR (@Return_Date_Time_To_Process IS NULL)
 				BEGIN
@@ -137,15 +140,15 @@ BEGIN
 
 					SELECT 'Return ' + QUOTENAME(CAST(@Return_Id AS VARCHAR),'''') + ' of amount ' + QUOTENAME(CAST(@Return_Amount AS VARCHAR),'''') 
 						+ ' for Order ' + QUOTENAME(@Order_Id,'''') + ' successfully added' AS [Message]
-				END
+				END;
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
 		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
 		IF @@TRANCOUNT > 0 ROLLBACK TRAN
-	END CATCH
-END
+	END CATCH;
+END;
 GO
 
 -- Order 1 has Product 1 (Count 2), Product 5 (Count 1), Product 9 (Count 3), Paid on 10-Feb 11:35

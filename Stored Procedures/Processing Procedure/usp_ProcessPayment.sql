@@ -10,6 +10,9 @@
     Modified            : Version 1
 ****************************************************************/
 
+USE BrightMartV2;
+GO
+
 CREATE OR ALTER PROC
 Usp_ProcessPayment
 @Order_Id VARCHAR(5) = NULL,
@@ -24,16 +27,16 @@ BEGIN
 	DECLARE @Transaction_Date_Time_To_Process DATETIME
 	DECLARE @Order_Amount DECIMAL(9,2)
 	DECLARE @Order_Status TINYINT
-	DECLARE @Order_Date_Time DATETIME
+	DECLARE @Order_Date_Time DATETIME;
 	BEGIN TRY
 		BEGIN TRAN
-			SET @Order_Id_To_Process = TRY_CONVERT(INT,@Order_Id)
+			SET @Order_Id_To_Process = TRY_CONVERT(INT,@Order_Id);
 			SET @Payment_Type_To_Process = CASE LOWER(@Payment_Type) WHEN 'cash' THEN 'Cash'
 																	 WHEN 'card' THEN 'Card'
-																	 WHEN 'upi' THEN 'UPI' END
+																	 WHEN 'upi' THEN 'UPI' END;
 			SET @Transaction_Date_Time_To_Process = CASE WHEN @Transaction_Date_Time IS NULL THEN GETDATE()
 														 WHEN LTRIM(@Transaction_Date_Time) = '' THEN NULL
-														 ELSE TRY_CONVERT(DATETIME,@Transaction_Date_Time,120) END
+														 ELSE TRY_CONVERT(DATETIME,@Transaction_Date_Time,120) END;
 
 			SELECT @Order_Amount = OrderAmount, @Order_Status = OrderStatus, @Order_Date_Time = OrderDateTime
 			FROM dbo.[Order]
@@ -81,7 +84,7 @@ BEGIN
 				END
 			ELSE IF EXISTS (SELECT 1 FROM OrderProduct OP
 							INNER JOIN 
-							dbo.Product P ON P.ProductID = OP.ProductID
+							dbo.[Product] P ON P.ProductID = OP.ProductID
 							WHERE OP.OrderID = @Order_Id_To_Process
 							AND P.ProductAvailableCount < OP.ProductOrderCount)
 				BEGIN
@@ -96,18 +99,18 @@ BEGIN
 
 					UPDATE dbo.[Order]
 					SET OrderStatus = 1
-					WHERE OrderID = @Order_Id_To_Process
+					WHERE OrderID = @Order_Id_To_Process;
 
 					UPDATE P
 					SET P.ProductAvailableCount = P.ProductAvailableCount - OP.ProductOrderCount
-					FROM dbo.Product P
+					FROM dbo.[Product] P
 					INNER JOIN 
 					dbo.OrderProduct OP ON OP.ProductID = P.ProductID
-					WHERE OP.OrderID = @Order_Id_To_Process
+					WHERE OP.OrderID = @Order_Id_To_Process;
 
 					SELECT 'Payment of ' + QUOTENAME(CAST(@Order_Amount AS VARCHAR),'''') + ' Successful for Order '
 						+ QUOTENAME(@Order_Id,'''') + '! Order Completed'  AS [Message]
-				END
+				END;
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
@@ -121,9 +124,9 @@ BEGIN
 				INSERT INTO dbo.OrderTransaction(TransactionID, OrderID, PaymentType, TransactionDateTime, TransactionStatus)
 					VALUES (NEWID(), @Order_Id_To_Process, @Payment_Type_To_Process, @Transaction_Date_Time_To_Process, 0)
 				SELECT 'Payment Failed for Order ' + QUOTENAME(@Order_Id,'''') + '! Order is still Pending in the Queue' AS [Message]
-			END
-	END CATCH
-END
+			END;
+	END CATCH;
+END;
 GO
 
 -- Order 1 was created on 10-Feb 11:30

@@ -10,6 +10,9 @@
 
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_SalesByStore
 @Store_ID VARCHAR(10) = NULL

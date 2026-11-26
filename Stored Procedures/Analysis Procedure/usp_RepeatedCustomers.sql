@@ -9,6 +9,9 @@
 
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC 
 usp_RepeatedCustomers
 AS

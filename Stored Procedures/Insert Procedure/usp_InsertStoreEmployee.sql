@@ -5,9 +5,6 @@
     Created On          : 20/11/26
     Modified By         : Zeeshan Shaikh
     Modified On         : 20/11/26
-    Modified            : Version 2 - parameters accepted as NULL-able text,
-                          converted with TRY_CONVERT into typed variables,
-                          age must be 18 to 60 on join date
 ****************************************************************/
 
 USE BrightmartV2;
@@ -15,14 +12,14 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertStoreEmployee
-@EmployeeStoreId      NVARCHAR(5)  = NULL,   -- required (INT)
-@EmployeeName         NVARCHAR(50) = NULL,   -- required
-@EmployeeGender       NVARCHAR(15)  = NULL,   -- required
-@EmployeeDOB          NVARCHAR(10)  = NULL,   -- required (DATE, yyyy-mm-dd)
-@EmployeeEmail        NVARCHAR(150) = NULL,   -- required
-@EmployeePhone        NVARCHAR(10)  = NULL,   -- required
-@EmployeeGovernmentId NVARCHAR(15)  = NULL,   -- required
-@EmployeeJoinDate     NVARCHAR(10)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
+@EmployeeStoreId      VARCHAR(5)  = NULL,   -- required (INT)
+@EmployeeName         VARCHAR(52) = NULL,   -- required
+@EmployeeGender       VARCHAR(15)  = NULL,   -- required
+@EmployeeDOB          VARCHAR(10)  = NULL,   -- required (DATE, yyyy-mm-dd)
+@EmployeeEmail        VARCHAR(152) = NULL,   -- required
+@EmployeePhone        VARCHAR(10)  = NULL,   -- required
+@EmployeeGovernmentId VARCHAR(15)  = NULL,   -- required
+@EmployeeJoinDate     VARCHAR(10)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -53,7 +50,7 @@ BEGIN
 			BEGIN
 				SELECT 'Store Id is required and must be a whole number' AS [Message]
 			END
-			ELSE IF NOT EXISTS (SELECT 1 FROM Store WHERE StoreId = @vStoreId AND StoreActiveStatus = 1)
+			ELSE IF NOT EXISTS (SELECT 1 FROM dbo.Store WHERE StoreId = @vStoreId AND StoreActiveStatus = 1)
 			BEGIN
 				SELECT 'INVALID Store Id - store does not exist or is inactive' AS [Message]
 			END
@@ -88,7 +85,7 @@ BEGIN
 			BEGIN
 				SELECT 'Employee Join Date cannot be in the future' AS [Message]
 			END
-			ELSE IF (@vJoinDate < (SELECT StoreEstablishDate FROM Store WHERE StoreId = @vStoreId))
+			ELSE IF (@vJoinDate < (SELECT StoreEstablishDate FROM dbo.Store WHERE StoreId = @vStoreId))
 			BEGIN
 				SELECT 'Employee Join Date cannot be before the Store Establish Date' AS [Message]
 			END
@@ -112,7 +109,7 @@ BEGIN
 			BEGIN
 				SELECT 'INVALID Email Address' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM StoreEmployee WHERE EmployeeEmail = @vEmail)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.StoreEmployee WHERE EmployeeEmail = @vEmail)
 			BEGIN
 				SELECT 'Email ' + QUOTENAME(@vEmail,'''') + ' already exists in the Store Employee Table' AS [Message]
 			END
@@ -127,7 +124,7 @@ BEGIN
 			BEGIN
 				SELECT 'INVALID Phone Number (10 digits, starting with 6-9 AND Same Digit phone numbers are not Valid)' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM StoreEmployee WHERE EmployeePhone = @vPhone)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.StoreEmployee WHERE EmployeePhone = @vPhone)
 			BEGIN
 				SELECT 'Phone ' + QUOTENAME(@vPhone,'''') + ' already exists in the Store Employee Table' AS [Message]
 			END
@@ -140,18 +137,18 @@ BEGIN
 			BEGIN
 				SELECT 'INVALID Government Id (letters and digits only, 8 to 15 characters)' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM StoreEmployee WHERE EmployeeGovernmentId = @vGovernmentId)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.StoreEmployee WHERE EmployeeGovernmentId = @vGovernmentId)
 			BEGIN
 				SELECT 'This Government Id already exists in the Store Employee Table' AS [Message]
 			END
 			ELSE
 			BEGIN
-				INSERT INTO StoreEmployee(EmployeeStoreId, EmployeeName, EmployeeGender, EmployeeDOB, EmployeeEmail,
+				INSERT INTO dbo.StoreEmployee(EmployeeStoreId, EmployeeName, EmployeeGender, EmployeeDOB, EmployeeEmail,
 										  EmployeePhone, EmployeeGovernmentId, EmployeeJoinDate)
 				VALUES(@vStoreId, @vName, @vGender, @vDOB, @vEmail, @vPhone, @vGovernmentId, @vJoinDate)
 				SELECT 'Employee ' + QUOTENAME(@vName,'''') + ' successfully added in the Store Employee Table with ID '
 					   + CAST(SCOPE_IDENTITY() AS VARCHAR(10)) AS [Message]
-			END
+			END;
 	END TRY
 	BEGIN CATCH
 		IF ERROR_NUMBER() IN (2627, 2601)
@@ -159,6 +156,6 @@ BEGIN
 		ELSE
 			SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.' AS [Message]
 			SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
-	END CATCH
+	END CATCH;
 END
 GO

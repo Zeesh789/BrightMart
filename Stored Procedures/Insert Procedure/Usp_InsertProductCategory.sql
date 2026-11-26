@@ -13,7 +13,7 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertProductCategory
-@CategoryName NVARCHAR(100) = NULL     -- wider than column so over-length input is caught, not silently truncated
+@CategoryName VARCHAR(52) = NULL     
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -28,7 +28,7 @@ BEGIN
 			BEGIN
 				SELECT 'Consecutive Spaces Not Allowed! Invalid Input' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM ProductCategory WHERE ProductCategoryName = @CategoryName)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.ProductCategory WHERE ProductCategoryName = @CategoryName)
 			BEGIN
 				SELECT 'Category ' + QUOTENAME(@CategoryName,'''') + ' already exists in the Product Category Table' AS [Message]
 			END
@@ -38,12 +38,12 @@ BEGIN
 				VALUES(@CategoryName)
 				SELECT 'Category ' + QUOTENAME(@CategoryName,'''') + ' successfully added in the Product Category Table with ID '
 					   + CAST(SCOPE_IDENTITY() AS VARCHAR(10)) AS [Message]
-			END
+			END;
 	END TRY
 	BEGIN CATCH
 		SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 		SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
-	END CATCH
+	END CATCH;
 END
 GO
 

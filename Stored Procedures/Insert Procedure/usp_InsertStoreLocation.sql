@@ -13,8 +13,8 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertStoreLocation
-@LocationArea NVARCHAR(100) = NULL,
-@StoreAddress NVARCHAR(300) = NULL
+@LocationArea VARCHAR(52) = NULL,
+@StoreAddress VARCHAR(202) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -39,17 +39,21 @@ BEGIN
 			BEGIN
 				SELECT 'INVALID Store Address (10 to 255 characters; letters, digits, spaces and , . / # - only)' AS [Message]
 			END
+			ELSE IF (PATINDEX('[0-9]', @StoreAddress) > 0) AND (PATINDEX('[a-zA-Z]', @StoreAddress) = 0)
+			BEGIN
+				SELECT 'Only Numbers are not Valid as Store Address. Please Enter a Valid Input' AS [Message]
+			END
 			ELSE IF (CHARINDEX('  ', @StoreAddress) > 0)
 			BEGIN
 				SELECT 'Consecutive Spaces Not Allowed in Store Address! Invalid Input' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM StoreLocation WHERE StoreAddress = @StoreAddress)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.StoreLocation WHERE StoreAddress = @StoreAddress)
 			BEGIN
 				SELECT 'This Store Address already exists in the Store Location Table' AS [Message]
 			END
 			ELSE
 			BEGIN
-				INSERT INTO StoreLocation(StoreLocationArea, StoreAddress)
+				INSERT INTO dbo.StoreLocation(StoreLocationArea, StoreAddress)
 				VALUES(@LocationArea, @StoreAddress)
 				SELECT 'Location ' + QUOTENAME(@LocationArea,'''') + ' successfully added in the Store Location Table with ID '
 					   + CAST(SCOPE_IDENTITY() AS VARCHAR(10)) AS [Message]

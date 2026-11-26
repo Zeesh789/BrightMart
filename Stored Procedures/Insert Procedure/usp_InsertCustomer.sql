@@ -5,9 +5,6 @@
     Created On          : 20/11/26
     Modified By         : Zeeshan Shaikh
     Modified On         : 20/11/26
-    Modified            : Version 2 - parameters accepted as NULL-able text,
-                          converted with TRY_CONVERT into typed variables,
-                          age must be 5 to 75 on register date
 ****************************************************************/
 
 USE BrightmartV2;
@@ -15,21 +12,21 @@ GO
 
 CREATE OR ALTER PROC
 usp_InsertCustomer
-@CustomerName         NVARCHAR(50) = NULL,   -- required
-@CustomerPhone        NVARCHAR(10)  = NULL,   -- required
-@CustomerEmail        NVARCHAR(100) = NULL,   -- optional
-@CustomerGender       NVARCHAR(10)  = NULL,   -- optional
-@CustomerDOB          NVARCHAR(10)  = NULL,   -- optional (DATE, yyyy-mm-dd)
-@CustomerRegisterDate NVARCHAR(12)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
+@CustomerName         VARCHAR(50) = NULL,   -- required
+@CustomerPhone        VARCHAR(10)  = NULL,   -- required
+@CustomerEmail        VARCHAR(100) = NULL,   -- optional
+@CustomerGender       VARCHAR(10)  = NULL,   -- optional
+@CustomerDOB          VARCHAR(10)  = NULL,   -- optional (DATE, yyyy-mm-dd)
+@CustomerRegisterDate VARCHAR(12)  = NULL    -- optional (DATE, yyyy-mm-dd) : defaults to today
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	/*---------- Convert inputs to required datatypes ----------*/
-	DECLARE @vName         VARCHAR(50) = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@CustomerName)), ''));
-	DECLARE @vPhone        VARCHAR(10)  = TRY_CONVERT(VARCHAR(10), NULLIF(LTRIM(RTRIM(@CustomerPhone)), ''));
-	DECLARE @vEmail        VARCHAR(100) = TRY_CONVERT(VARCHAR(100), NULLIF(LOWER(LTRIM(RTRIM(@CustomerEmail))), ''));
-	DECLARE @vGender       VARCHAR(10)  = TRY_CONVERT(VARCHAR(10), NULLIF(LTRIM(RTRIM(@CustomerGender)), ''));
+	DECLARE @vName         VARCHAR(52) = TRY_CONVERT(VARCHAR(50), NULLIF(LTRIM(RTRIM(@CustomerName)), ''));
+	DECLARE @vPhone        VARCHAR(12)  = TRY_CONVERT(VARCHAR(10), NULLIF(LTRIM(RTRIM(@CustomerPhone)), ''));
+	DECLARE @vEmail        VARCHAR(102) = TRY_CONVERT(VARCHAR(100), NULLIF(LOWER(LTRIM(RTRIM(@CustomerEmail))), ''));
+	DECLARE @vGender       VARCHAR(15)  = TRY_CONVERT(VARCHAR(15), NULLIF(LTRIM(RTRIM(@CustomerGender)), ''));
 	DECLARE @vDOB          DATE         = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@CustomerDOB)), ''));
 	DECLARE @vRegisterDate DATE         = TRY_CONVERT(DATE, NULLIF(LTRIM(RTRIM(@CustomerRegisterDate)), ''));
 	DECLARE @vToday        DATE         = CAST(GETDATE() AS DATE);
@@ -66,7 +63,7 @@ BEGIN
 			BEGIN
 				SELECT 'INVALID Phone Number (10 digits, starting with 6-9)' AS [Message]
 			END
-			ELSE IF EXISTS (SELECT 1 FROM Customer WHERE CustomerPhone = @vPhone AND CustomerActiveStatus = 1)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.Customer WHERE CustomerPhone = @vPhone AND CustomerActiveStatus = 1)
 			BEGIN
 				SELECT 'An active customer with Phone ' + QUOTENAME(@vPhone,'''') + ' already exists' AS [Message]
 			END
@@ -78,7 +75,7 @@ BEGIN
 				SELECT 'INVALID Email Address' AS [Message]
 			END
 			ELSE IF (@vEmail IS NOT NULL)
-			AND EXISTS (SELECT 1 FROM Customer WHERE CustomerEmail = @vEmail AND CustomerActiveStatus = 1)
+			AND EXISTS (SELECT 1 FROM dbo.Customer WHERE CustomerEmail = @vEmail AND CustomerActiveStatus = 1)
 			BEGIN
 				SELECT 'An active customer with Email ' + QUOTENAME(@vEmail,'''') + ' already exists' AS [Message]
 			END
@@ -109,7 +106,7 @@ BEGIN
 			END
 			ELSE
 			BEGIN
-				INSERT INTO Customer(CustomerName, CustomerEmail, CustomerPhone, CustomerGender, CustomerDOB, CustomerRegisterDate)
+				INSERT INTO dbo.Customer(CustomerName, CustomerEmail, CustomerPhone, CustomerGender, CustomerDOB, CustomerRegisterDate)
 				VALUES(@vName, @vEmail, @vPhone, @vGender, @vDOB, @vRegisterDate)
 				SELECT 'Customer ' + QUOTENAME(@vName,'''') + ' successfully added in the Customer Table with ID '
 					   + CAST(SCOPE_IDENTITY() AS VARCHAR(10)) AS [Message]

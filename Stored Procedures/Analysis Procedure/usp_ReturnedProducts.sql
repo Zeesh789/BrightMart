@@ -11,6 +11,9 @@
                           Ranked by Units Returned.
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_ReturnedProducts
 @CategoryID VARCHAR(10)  = NULL

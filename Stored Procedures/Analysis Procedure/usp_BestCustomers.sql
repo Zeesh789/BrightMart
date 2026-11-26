@@ -9,6 +9,9 @@
     Modified            : Version 1
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_BestCustomers
 AS

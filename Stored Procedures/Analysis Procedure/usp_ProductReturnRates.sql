@@ -10,6 +10,9 @@
                
 ****************************************************************/
 
+USE BrightmartV2;
+GO
+
 CREATE OR ALTER PROC
 usp_ProductReturnRates
 @CategoryID VARCHAR(10)  = NULL

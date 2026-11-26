@@ -10,6 +10,9 @@
     Modified            : Version 1
 ****************************************************************/
 
+USE BrightMartV2;
+GO
+
 CREATE OR ALTER PROC
 Usp_InsertFeedback
 @Order_Id VARCHAR(5) = NULL,
@@ -23,16 +26,16 @@ BEGIN
 	DECLARE @Store_Rating_To_Process INT
 	DECLARE @Cashier_Rating_To_Process INT
 	DECLARE @Order_Status TINYINT
-	DECLARE @Feedback_Id INT
+	DECLARE @Feedback_Id INT;
 	BEGIN TRY
 		BEGIN TRAN
-			SET @Order_Id_To_Process = TRY_CONVERT(INT,@Order_Id)
-			SET @Store_Rating_To_Process = TRY_CONVERT(INT,@Store_Rating)
-			SET @Cashier_Rating_To_Process = TRY_CONVERT(INT,@Cashier_Rating)
+			SET @Order_Id_To_Process = TRY_CONVERT(INT,@Order_Id);
+			SET @Store_Rating_To_Process = TRY_CONVERT(INT,@Store_Rating);
+			SET @Cashier_Rating_To_Process = TRY_CONVERT(INT,@Cashier_Rating);
 
 			SELECT @Order_Status = OrderStatus
 			FROM dbo.[Order]
-			WHERE OrderID = @Order_Id_To_Process
+			WHERE OrderID = @Order_Id_To_Process;
 
 			IF (@Order_Id_To_Process IS NULL) OR (@Store_Rating_To_Process IS NULL) OR (@Cashier_Rating_To_Process IS NULL)
 				OR (@Feedback_Detail IS NULL)
@@ -67,7 +70,7 @@ BEGIN
 				BEGIN
 					SELECT 'Consecutive Spaces Not Allowed! Invalid Input' AS [Message]
 				END
-			ELSE IF EXISTS (SELECT 1 FROM StoreCashierFeedback WHERE OrderID = @Order_Id_To_Process)
+			ELSE IF EXISTS (SELECT 1 FROM dbo.StoreCashierFeedback WHERE OrderID = @Order_Id_To_Process)
 				BEGIN
 					SELECT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' already exists' AS [Message]
 				END
@@ -80,7 +83,7 @@ BEGIN
 						VALUES (@Feedback_Id, @Order_Id_To_Process, @Store_Rating_To_Process, @Cashier_Rating_To_Process,
 								LTRIM(RTRIM(@Feedback_Detail)))
 					SELECT 'Feedback for Order ' + QUOTENAME(@Order_Id,'''') + ' successfully added in the Feedback Table' AS [Message]
-				END
+				END;
 		COMMIT TRAN
 	END TRY
 	BEGIN CATCH
@@ -94,10 +97,10 @@ BEGIN
 		BEGIN
 			SELECT 'An Unexpected Error Occured. Contact Administrator if the problem persists.'
 			SELECT 'Error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ' : ' + ERROR_MESSAGE() AS [Message]
-		END
-		IF @@TRANCOUNT > 0 ROLLBACK TRAN
-	END CATCH
-END
+		END;
+		IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+	END CATCH;
+END;
 GO
 
 EXEC Usp_InsertFeedback
