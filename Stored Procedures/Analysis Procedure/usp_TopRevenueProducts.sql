@@ -24,12 +24,12 @@ BEGIN
 		IF (@Category_Id IS NOT NULL) AND (@Category_Id_To_Process IS NULL)
 			BEGIN
 				Select 'Invalid Category Id' AS [Message]
-			END;
+			END
 		ELSE IF (@Category_Id_To_Process IS NOT NULL)
 				AND NOT EXISTS (SELECT 1 FROM dbo.ProductCategory WHERE ProductCategoryID = @Category_Id_To_Process)
 			BEGIN
 				Select 'Category ' + QUOTENAME(@Category_Id,'''') + ' does not exist' AS [Message]
-			END;
+			END
 		ELSE
 			BEGIN
 				WITH TopRevenueProduct(RevenueRank,ProductName,ProductCategoryName,GrossRevenue)
